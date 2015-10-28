@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script assume that the PC++ is inside the 'boinc-repo'
-# (boinc-repo/samples/pc/src)
+# (boinc/samples/pc-boinc/src)
 
 
 echo "**********************"
@@ -17,6 +17,6 @@ echo "* BUILD PC++ (BOINC) 64 bit *"
 echo "*****************************"
 
 cd samples/pc-boinc/src/
-ln -s `g++ -print-file-name=libstdc++.a`
+ln -sf `g++ -print-file-name=libstdc++.a`
 make clean
 make
