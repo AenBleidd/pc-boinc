@@ -29,7 +29,7 @@ echo "*********************************************"
 echo "*   Building Mac 64-bit Intel Application   *"
 echo "*********************************************"
 echo
-cd ../samples/lbdm-client/src/
+cd ../samples/pc-boinc/src/
 
 GPPPATH=`xcrun -find g++`
 GCCPATH=`xcrun -find gcc`

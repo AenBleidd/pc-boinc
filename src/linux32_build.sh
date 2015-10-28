@@ -16,7 +16,7 @@ echo "*****************************"
 echo "* BUILD PC++ (BOINC) 32 bit *"
 echo "*****************************"
 
-cd samples/lbdm-client/src/
+cd samples/pc-boinc/src/
 ln -s `g++ -m32 -print-file-name=libstdc++.a`
 make clean
 export ARCH=-m32

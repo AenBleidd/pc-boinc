@@ -16,7 +16,7 @@ echo "*****************************"
 echo "* BUILD PC++ (BOINC) 64 bit *"
 echo "*****************************"
 
-cd samples/lbdm-client/src/
+cd samples/pc-boinc/src/
 ln -s `g++ -print-file-name=libstdc++.a`
 make clean
 make
