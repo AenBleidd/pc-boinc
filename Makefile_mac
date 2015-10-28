@@ -1,0 +1,29 @@
+BOINC_DIR = ../../..
+BOINC_API_DIR = $(BOINC_DIR)/api
+BOINC_LIB_DIR = $(BOINC_DIR)/lib
+BOINC_ZIP_DIR = $(BOINC_DIR)/zip
+BOINC_BUILD_DIR = $(BOINC_DIR)/mac_build/build/Deployment
+FREETYPE_DIR = /usr/include/freetype2
+CFLAGS = -c -O3 -Wall -Wextra -pedantic $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR)
+CXXFLAGS = $(CFLAGS) -std=c++11
+LDFLAGS = $(VARIANTFLAGS) -L$(BOINC_BUILD_DIR) -L/usr/X11R6/lib -L.
+CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
+CSOURCES = erf.c
+OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o)
+EXECUTABLE = pc.exe
+
+all: $(CXXSOURCES) $(CSOURCES) $(EXECUTABLE)
+	
+$(EXECUTABLE): $(OBJECTS) $(BOINC_BUILD_DIR)/libboinc_api.a $(BOINC_BUILD_DIR)/libboinc.a
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o ../bin/$@ -lboinc_api -lboinc
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+.c.o:
+	$(CC) $(CFLAGS) $< -o $@
+
+clean:
+	rm -rf ../bin/pc.exe *.o *~
+
+.PHONY: all clean
