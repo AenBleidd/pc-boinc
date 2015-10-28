@@ -8,4 +8,4 @@
 # results stored in
 #   * output/
 
-pc
+bin/pc input/tile.txt output/output.txt 0.05 10 10
