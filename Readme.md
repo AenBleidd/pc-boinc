@@ -1,17 +1,18 @@
 # PC++ (BOINC version) #
 
-This README would normally document whatever steps are necessary to get your application up and running.
 
 ### Setup ###
 
-* First of all, you need to download the boinc repository: git://boinc.berkeley.edu/boinc-v2.git
-* After having downloaded the boinc repository (assume to have it in the `boinc_repo` folder, you need to clone this repository in the folder `boinc_repo/samples/`
+* First of all, I suggest you to create a directory, for example `BOINC_dev`
+* Then, you need to download the boinc repository: `git clone https://github.com/BOINC/boinc boinc`
+* After having downloaded the boinc repository (assume to have it in `BOINC_dev/boinc/` folder, you need to clone this repository in the folder `BOINC_dev/boinc/samples/`
 * Before compiling the PC++ (BOINC version), you may need the following repository to compile the BOINC lybraries
 	* c-ares-1.9.1: http://c-ares.haxx.se/
 	* curl-7.26.0: http://curl.haxx.se/
 	* openssl-1.0.1e: www.openssl.org
-
-* Assuming you now have this repository inside `boinc_repo/samples/pc-boinc/`, you can compile it using the provided scritps inside the `src` folder
+	* libtool
+	* libnotify-dev
+* Assuming you now have this repository inside `BOINC_dev/boinc/samples/pc-boinc/`, you can compile it using the provided scritps inside the `src` folder
 * A test is available, you just need to run it using the `test_run.sh` script
 
 
