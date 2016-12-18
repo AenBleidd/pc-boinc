@@ -15,15 +15,15 @@
 	Trento, fall 2013 - spring 2014
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
-	         Paolo Morettin, Nadir Sella, Thomas Tolio.
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
 */
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <algorithm>
-#ifndef _GRAPH
 #include "Graph.hpp"
-#endif
+#include "DoubleVector.hpp"
 
 /**	Constructor method.
 	
@@ -36,6 +36,8 @@
 */
 Graph::Graph(const int dim) {
 	nRows = dim;
+	nRowsAligned = DoubleVector::align_to_element_count(dim);
+	nRowsFullVects = nRowsAligned > nRows ? nRowsAligned - DoubleVector::ElementCount : nRowsAligned;
 
 	numNeighbours = new int[nRows];
 
@@ -46,25 +48,24 @@ Graph::Graph(const int dim) {
 		matrix[i] = new bool[nRows];
 	}
 
-	means = new double[nRows];
+	means = DoubleVector::alloc(nRowsAligned);
 	probeIDs = new std::string[nRows];
-	standardDeviations = new double[nRows];
+	standardDeviations = DoubleVector::alloc(nRowsAligned);
 
 	// create rho matrix
 	rho = new double*[nRows];
 
 	for (int i = 0; i < nRows; i++) {
-		rho[i] = new double[nRows];
+		rho[i] = DoubleVector::alloc(nRowsAligned);
 	}
 
 	score = 0;
-	count_score = 1;
 
 	// initialize matrix, numNeighbours and l
-	initializeMatrix(matrix, nRows);
-	initializeNeighbours(numNeighbours, nRows);
-	initializeZero(means, nRows);
-	initializeZero(standardDeviations, nRows);
+	initializeMatrix(matrix, nRows, nRowsAligned);
+	initializeNeighbours(numNeighbours, nRows, nRowsAligned);
+	initializeZero(means, nRows, nRowsAligned);
+	initializeZero(standardDeviations, nRows, nRowsAligned);
 }
 
 /** Destructor method.
@@ -80,27 +81,44 @@ Graph::~Graph(void) {
 
 	// empty the memory for bioData
 	for (int i = 0; i < nRows; i++) {
-		delete[] bioData[i];
+		DoubleVector::free(bioData[i]);
 	}
 	delete[] bioData;
 
 	// empty the memory for means
-	delete[] means;
+	DoubleVector::free(means);
 
 	// empty the memory for probeIDs
 	delete[] probeIDs;
 
 	// empty the memory for standardDeviations
-	delete[] standardDeviations;
+	DoubleVector::free(standardDeviations);
 
 	// empty the memory for numNeighbours
 	delete[] numNeighbours;
 
 	// empty the memory for rho
 	for (int i = 0; i < nRows; i++) {
-		delete[] rho[i];
+		DoubleVector::free(rho[i]);
 	}
 	delete[] rho;
+}
+
+void Graph::initBioDataMatrix(const int columns) // initialize bioData matrix
+{
+	nCols = columns;
+	nColsAligned = DoubleVector::align_to_element_count(columns);
+	nColsFullVects = nColsAligned > nCols ? nColsAligned - DoubleVector::ElementCount : nColsAligned;
+	
+	bioData = new double*[nRows];
+
+	for (int i = 0; i < nRows; i++) {
+		bioData[i] = DoubleVector::alloc(nColsAligned);
+		
+		if (nColsAligned > nCols) {
+			std::memset(bioData[i] + nCols, 0, (nColsAligned - nCols) * sizeof(double));
+		}
+	}
 }
 
 /** Shuffles the given probes.
@@ -126,14 +144,42 @@ void Graph::shuffleInputProbes(const time_t seed) {
 
 	@return nothing.
 */
+// TODO SIMD; check performance!
 void Graph::computeStandardDeviations(void) {
-	for (int r = 0; r < nRows; r++) {
+	/*for (int r = 0; r < nRows; r++) {
+		double mean_r = means[r];
 		for (int c = 0; c < nCols; c++) {
-			standardDeviations[r] += pow((bioData[r][c] - means[r]), 2);
+			standardDeviations[r] += pow((bioData[r][c] - mean_r), 2);
 		}
 
 		standardDeviations[r] /= (double) nCols;
 		standardDeviations[r] = sqrt(standardDeviations[r]);
+	}*/
+	
+	for (int r = 0; r < nRows; r++) {
+		const double mean_r = means[r];
+		const DoubleVector v_mean_r(mean_r);
+		DoubleVector v_sum;
+		int c;
+		for (c = 0; c < nColsFullVects; c += DoubleVector::ElementCount) {
+			//standardDeviations[r] += pow((bioData[r][c] - mean_r), 2);
+			DoubleVector v_tmp = DoubleVector(&bioData[r][c]) - v_mean_r;
+			v_sum.mul_add_self(v_tmp, v_tmp);
+		}
+		standardDeviations[r] = v_sum.sum_elements();
+		for (; c < nCols; ++c) {
+			standardDeviations[r] += pow((bioData[r][c] - mean_r), 2);
+		}
+	}
+
+	const DoubleVector v_nCols(static_cast<double>(nCols));
+	for (int r = 0; r < nRows; r += DoubleVector::ElementCount) {
+		//standardDeviations[r] /= (double) nCols;
+		//standardDeviations[r] = sqrt(standardDeviations[r]);
+		DoubleVector v(&standardDeviations[r]);
+		v /= v_nCols;
+		v.sqrt_self();
+		v.store(&standardDeviations[r]);
 	}
 }
 
@@ -141,24 +187,76 @@ void Graph::computeStandardDeviations(void) {
 
 	@return nothing.
 */
+// TODO SIMD; check performance!
 void Graph::computeCorrelations(void) {
-	double covariance = 0.0;
+	/*double covariance = 0.0;
 
 	for (int i = 0; i < nRows; i++) {
+		double mean_i = means[i];
+		double standardDeviation_i = standardDeviations[i];
 		for (int j = 0; j < nRows; j++) {
 			covariance = 0.0;
+			double mean_j = means[j];
 
 			for (int k = 0; k < nCols; k++) {
-				covariance += (bioData[i][k] - means[i]) * (bioData[j][k] - means[j]);
+				covariance += (bioData[i][k] - mean_i) * (bioData[j][k] - mean_j);
 			}
 
 			// divide covariance by nCols
 			covariance /= nCols;
 
 			// covariance(i, j) / sigma(i) * sigma(j)
-			rho[i][j] = covariance / (standardDeviations[i] * standardDeviations[j]);
+			rho[i][j] = covariance / (standardDeviation_i * standardDeviations[j]);
+		}
+	}*/
+	
+	const DoubleVector v_nCols(static_cast<double>(nCols));
+	
+	for (int i = 0; i < nRows; i++) {
+		const double mean_i = means[i];
+		const DoubleVector v_mean_i(mean_i);
+		for (int j = 0; j < nRows; j++) {
+			const double mean_j = means[j];
+			const DoubleVector v_mean_j(mean_j);
+			//double covariance = 0.0;
+			DoubleVector v_sum;
+
+			int k;
+			for (k = 0; k < nColsFullVects; k += DoubleVector::ElementCount) {
+				//covariance += (bioData[i][k] - mean_i) * (bioData[j][k] - mean_j);
+				v_sum.mul_add_self(DoubleVector(&bioData[i][k]) - v_mean_i,
+								   DoubleVector(&bioData[j][k]) - v_mean_j);
+			}
+			double covariance = v_sum.sum_elements();
+			for (; k < nCols; ++k) {
+				covariance += (bioData[i][k] - mean_i) * (bioData[j][k] - mean_j);
+			}
+			
+			rho[i][j] = covariance;
+		}
+
+		const double standardDeviation_i = standardDeviations[i];
+		const DoubleVector v_standardDeviation_i(standardDeviation_i);
+		for (int j = 0; j < nRows; j += DoubleVector::ElementCount) {
+			DoubleVector v_rho(&rho[i][j]);
+			// divide covariance by nCols
+			//rho[i][j] /= nCols;
+			v_rho /= v_nCols;
+
+			// covariance(i, j) / sigma(i) * sigma(j)
+			//rho[i][j] /= (standardDeviation_i * standardDeviations[j]);
+			DoubleVector v_standardDeviation_j(&standardDeviations[j]);
+			v_rho /= v_standardDeviation_i * v_standardDeviation_j;
+			v_rho.store(&rho[i][j]);
 		}
 	}
+	
+	/* It looks that rho[i][j] == rho[j][i]
+	for (int i = 0; i < nRows; i++) {
+		for (int j = i+1; j < nRows; j++) {
+			rho[j][i] = rho[i][j];
+		}
+	}*/
 }
 
 /** Initialize the boolean matrix to TRUE, but the diagonal, set to FALSE.
@@ -171,15 +269,10 @@ void Graph::computeCorrelations(void) {
 
 	@return nothing.
 */
-void Graph::initializeMatrix(bool** matrix, const int dim) {
+void Graph::initializeMatrix(bool* __restrict__ * __restrict__ matrix, const int dim, const int /*dimAligned*/) {
 	for (int i = 0; i < dim; i++) {
-		for (int j = 0; j < dim; j++) {
-			if (i != j) {
-				matrix[i][j] = true;
-			} else {
-				matrix[i][j] = false;
-			}
-		}
+		std::memset(matrix[i], true, dim * sizeof(bool));
+		matrix[i][i] = false;
 	}
 }
 
@@ -194,9 +287,12 @@ void Graph::initializeMatrix(bool** matrix, const int dim) {
 	
 	@return nothing.
 */
-void Graph::initializeNeighbours(int* numNeighbours, const int dim) {
+void Graph::initializeNeighbours(int* __restrict__ numNeighbours, const int dim, const int dimAligned) {
 	for (int i = 0; i < dim; i++) {
 		numNeighbours[i] = dim - 1;
+	}
+	if (dimAligned > dim) {
+		std::memset(numNeighbours + dim, 0, (dimAligned - dim) * sizeof(int));
 	}
 }
 
@@ -210,8 +306,6 @@ void Graph::initializeNeighbours(int* numNeighbours, const int dim) {
 
 	@return nothing.
 */
-void Graph::initializeZero(double* array, const int dim) {
-	for (int i = 0; i < dim; i++) {
-		array[i] = 0.0;
-	}
+void Graph::initializeZero(double* __restrict__ array, const int /*dim*/, const int dimAligned) {
+	std::memset(array, 0, dimAligned * sizeof(double));
 }

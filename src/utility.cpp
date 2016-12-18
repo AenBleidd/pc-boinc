@@ -25,15 +25,10 @@
 #include <algorithm>
 #include <cstring>
 #include <map>
-#ifndef _UTILITY
 #include "utility.hpp"
-#endif
-#ifndef _BOINCFILE
 #include "BoincFile.hpp"
-#endif
-#ifndef _ERF
 #include "erf.h"
-#endif
+#include "DoubleVector.hpp"
 
 using namespace std;
 
@@ -180,18 +175,16 @@ void readTile(const string tilePath, int* &tilesDim, intpair** &tiles, int &tile
 
 	@return nothing.
 */
-void readCGN(const intpair* nodesPermutation, string** experiments, const int experimentsDim, Graph* &g, const int hibridizationDim) {
+void readCGN(const intpair* __restrict__ nodesPermutation, string* __restrict__ * __restrict__ experiments,
+	const int experimentsDim, Graph* __restrict__ g, const int hibridizationDim) {
 	BoincFile cgn;
 	string line;
 	int column = 0;
+	
+	line.reserve(50*1024);
 
 	// Initializes the bioData matrix
-	g->nCols = hibridizationDim;
-	g->bioData = new double*[g->nRows];
-
-	for (int i = 0; i < g->nRows; i++) {
-		g->bioData[i] = new double[g->nCols];
-	}
+	g->initBioDataMatrix(hibridizationDim);
 
 	for (int expp = 0; expp < experimentsDim; expp++) {
 		// read the file and save the values in bioData
@@ -253,68 +246,42 @@ double comulativeNormalDistribution(const double value) {
 	return 0.5 * a_erfc(-value * M_SQRT1_2);
 }
 
-/** Finds the correlation coefficient when l is greater than 1 (formally, when l > 1).
-	
-	@param const int a
-	Index of the selected row, that also represents the "departure" node i of an edge i->j.
+/** Computes the inverse continous density function.
+	This function uses bisection to find returned value, so it is quite slow,
+	e.g. for alpha = 0.05 it took 51 iterations to find it with expected precision.
+	Not be big deal if it is called once, though.
 
-	@param const int b
-	Index of the selected column, that also represents the "arrival" node j of an edge i->j.
+	@param const double value
+	Value for which it will be computed
 
-	@param const Graph* g
-	The Graph object representing the gene network.
-
-	@param const int* neighbours
-	Set of the nearby nodes.
-
-	@param const int* subset
-	Subset of the lookup indexes of the nearby nodes.
-	Note that this subset has cardinality l.
-
-	@param const int l
-	Reached dimension actually taken into account for the subset cardinality.
-	In this case l is greater than 1 (formally, l > 1).
-
-	@param double ** p
-	Rho value.
-	
-	@return The decimal value of the computed correlation for the edge a->b depending on the given neighbours' subset.
+	@return The inverse cumulative normal distribution decimal value for the passed parameter.
 */
-double correlations(const int a, const int b, const Graph* g, const int* neighbours, const int* subset, const int l, double ** p) {
-	int dim = l + 2;
+double inverseComulativeNormalDistribution(const double value) {
+	const int MAX_ITERATIONS = 200;
+	const double TOLERANCE = 1e-20;
 
-	// initialization of p (looks like rho)
-	for (int i = 0; i < dim - 1; i++) {
-		for (int j = i + 1; j < dim; j++) {
-			int first, second;
+	int iter = 1;
+	double a = 0.0, b = 10.0;
+	while (iter <= MAX_ITERATIONS) {
+		double c = (a + b) / 2.0;
 
-			if (i == 0) {
-				first = a;
-			} else if (i == 1) {
-				first = b;
-			} else {
-				first = neighbours[subset[i - 2]];
-			}
+		double cnd = comulativeNormalDistribution(c);
 
-			if (j == 1) {
-				second = b;
-			} else {
-				second = neighbours[subset[j - 2]];
-			}
-
-			p[i][j] = p[j][i] = g->rho[first][second];
+		if ((cnd == value) || ((b - a) / 2.0 < TOLERANCE)) {
+			return c;
 		}
+
+		++iter;
+		double cnd_a = comulativeNormalDistribution(a);
+
+		if (((cnd < value) && (cnd_a < value)) || ((cnd > value) && (cnd_a > value)))
+			a = c;
+		else
+			b = c;
 	}
 
-	for (int k = 1; k <= l; k++) {
-		for (int i = 0; i <= (l - k); i++) {
-			for (int j = i + 1; j < (dim - k); j++) {
-				p[i][j] = p[j][i] = (p[i][j] - p[i][dim - k] * p[j][dim - k]) / (sqrt((1 - pow(p[i][dim - k], 2)) * (1 - pow(p[j][dim - k], 2))));
-			}
-		}
-	}
-
-	return p[0][1];
+	cerr << "Max iteration count exceeded" << endl;
+	std::exit(1);
 }
 
 /** Checks if a given string (of the form array of chars) whether representing a float number or not.
