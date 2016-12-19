@@ -2,7 +2,7 @@
 
 
 # clean file of old runs
-rm -f boinc_lockfile stderr.txt
+rm -f boinc_lockfile stderr.txt output/output2.txt
 
 # input data
 #   * input/experiments.csv
