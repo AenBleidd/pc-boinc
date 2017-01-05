@@ -1,21 +1,23 @@
 /**
-    Copyright (c) 2013, All Right Reserved
-    
-    This software is in the public domain, furnished "as is", without technical
-    support, and with no warranty, express or implied, as to its usefulness for
-    any purpose.
-    
-    boinc_functions.hpp
-    This library contains all the functions that will be used to interface the
-    BOINC client with the BOINC server.
-    
-    University of Trento,
-    Department of Information Engineering and Computer Science
-    
-    Trento, fall 2013 - spring 2014
+	Copyright (c) 2013,2016, All Rights Reserved.
+	
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+	
+	boinc_functions.hpp
+	This library contains all the functions that will be used to interface the
+	BOINC client with the BOINC server.
+	
+	University of Trento,
+	Department of Information Engineering and Computer Science
+	
+	Trento, fall 2013 - spring 2014
 
-    Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
-             Paolo Morettin, Nadir Sella, Thomas Tolio.
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
 */
 
 #ifndef _BOINCFUNCTIONS

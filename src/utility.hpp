@@ -1,32 +1,29 @@
 /**
-    Copyright (c) 2013, All Right Reserved
-    
-    This software is in the public domain, furnished "as is", without technical
-    support, and with no warranty, express or implied, as to its usefulness for
-    any purpose.
-    
-    utility.hpp
-    This library will contain all the functions used by the PC-algorithm.
-    
-    University of Trento,
-    Department of Information Engineering and Computer Science
-    
-    Trento, fall 2013 - spring 2014
+	Copyright (c) 2013,2016, All Rights Reserved.
+	
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+	
+	utility.hpp
+	This library will contain all the functions used by the PC-algorithm.
+	
+	University of Trento,
+	Department of Information Engineering and Computer Science
+	
+	Trento, fall 2013 - spring 2014
 
-    Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
-             Paolo Morettin, Nadir Sella, Thomas Tolio.
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
 */
-
-#ifndef _GRAPH
-#include "Graph.hpp" // Graph
-#endif
-#ifndef _PC
-#include "pc.hpp" // intpair
-#endif
 
 #ifndef _UTILITY
 #define _UTILITY
 
+#include "Graph.hpp" // Graph
+#include "pc.hpp" // intpair
 
 // Compares two pairs of the type <probe identifier, lookup index>.
 bool comparator (const intpair &, const intpair &);
@@ -38,13 +35,13 @@ void readTile(const std::string, int* &, intpair** &, int &, std::string** &, co
 void readExperiments(const std::string, std::string** &, const int);
 
 // Reads the file CGN saving the biological data that will be used to compute the correlation coefficients.
-void readCGN(const intpair*, std::string**, const int, Graph* &, const int);
+void readCGN(const intpair* __restrict__, std::string* __restrict__ * __restrict__, const int, Graph* __restrict__, const int);
 
 // Computes the continous density function.
 double comulativeNormalDistribution(const double);
 
-// Finds the correlation coefficient when l is greater than 1 (formally, when l > 1).
-double correlations(const int, const int, const Graph*, const int*, const int*, const int, double **);
+// Computes the inverse continous density function.
+double inverseComulativeNormalDistribution(const double value);
 
 // Checks if a given string (of the form array of chars) whether representing a float number or not.
 bool isFloat(const char*);
