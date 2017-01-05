@@ -1,3 +1,24 @@
+/**
+	Copyright (c) 2016, All Rights Reserved.
+
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+
+	ScalarTypeVectorTraits.hpp
+	File with helper struct with definitions of various scalar double precisions
+	operations. It is designed to work as a 1-element vector. This allows to
+	create code which is independent of actual vector size.
+
+	University of Trento,
+	Department of Information Engineering and Computer Science
+
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
+*/
+
 #ifndef _SCALAR_TYPE_TRAITS_HPP_
 #define _SCALAR_TYPE_TRAITS_HPP_
 

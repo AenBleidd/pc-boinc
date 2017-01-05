@@ -1,3 +1,22 @@
+/**
+	Copyright (c) 2016, All Rights Reserved.
+
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+
+	AvxDoubleVectorTraits.hpp
+	File with helper struct with definitions of various AVX SIMD operations.
+
+	University of Trento,
+	Department of Information Engineering and Computer Science
+
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
+*/
+
 #ifndef _AVX_DOUBLE_VECTOR_TRAITS_HPP_
 #define _AVX_DOUBLE_VECTOR_TRAITS_HPP_
 

@@ -1,3 +1,23 @@
+/**
+	Copyright (c) 2016, All Rights Reserved.
+
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+
+	Vector.hpp
+	Generic implementation of SIMD Vector. It uses helper traits struct, which
+	provides actual implementations for all operations.
+
+	University of Trento,
+	Department of Information Engineering and Computer Science
+
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
+*/
+
 #ifndef _VECTOR_HPP_
 #define _VECTOR_HPP_
 

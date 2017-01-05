@@ -1,3 +1,24 @@
+/**
+	Copyright (c) 2016, All Rights Reserved.
+
+	This software is in the public domain, furnished "as is", without technical
+	support, and with no warranty, express or implied, as to its usefulness for
+	any purpose.
+
+	DoubleVector.hpp
+	This file checks which SIMD instructions are available, and defines various
+	types and defines which will allows to best utilize available instruction
+	sets.
+
+	University of Trento,
+	Department of Information Engineering and Computer Science
+
+	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
+			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
+*/
+
 #ifndef _DOUBLE_VECTOR_HPP_
 #define _DOUBLE_VECTOR_HPP_
 

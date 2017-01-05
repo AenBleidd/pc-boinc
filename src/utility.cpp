@@ -1,5 +1,5 @@
 /**
-	Copyright (c) 2013, All Right Reserved
+	Copyright (c) 2013,2016, All Rights Reserved.
 	
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
@@ -16,6 +16,8 @@
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
 			 Paolo Morettin, Nadir Sella, Thomas Tolio.
+
+	Optimizations by Daniel Fruzynski
 */
 
 #define M_SQRT1_2 0.70710678118654757273731092936941422522068023681640625 // definition for M_SQRT1_2
