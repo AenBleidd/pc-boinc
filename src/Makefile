@@ -1,25 +1,44 @@
+# SSE2, 64-bit
+#ARCH += -march=core2 -mtune=core2 -m64
+# AVX, 64-bit
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m64
+# AVX+FMA, 64-bit
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
+
+# SSE2, 32-bit
+#ARCH += -march=core2 -mtune=core2 -m32
+# AVX, 32-bit
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m32
+# AVX+FMA, 32-bit
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m32
+
 CC = gcc
 CXX = g++
+
 BOINC_DIR = ../../..
 BOINC_API_DIR = $(BOINC_DIR)/api
 BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_ZIP_DIR = $(BOINC_DIR)/zip
+BOINC_LIBS = $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
+
+ifdef BOINC_STUB
+BOINC_DIR = ../boinc_stub
+BOINC_LIBS = 
+endif
+
 FREETYPE_DIR = /usr/include/freetype2
-CFLAGS = -c -O3 $(ARCH) -Wall -Wextra -pedantic $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR)
+CFLAGS = -c -O3 $(ARCH) -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd -MMD -MP
 CXXFLAGS = $(CFLAGS) -std=c++11
 LDFLAGS = $(ARCH) -L/usr/X11R6/lib -L.
-CXXSOURCES = Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
+CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
 CSOURCES = erf.c
-OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o) BoincFile.o
-EXECUTABLE = pc
+OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o)
+EXECUTABLE = ../bin/pc
 
-all: $(CXXSOURCES) $(CSOURCES) $(EXECUTABLE)
+all: $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o ../bin/$@ -pthread libstdc++.a $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
-
-BoincFile.o: BoincFile.cpp BoincFile.hpp
-	$(CXX) $(CXXFLAGS) BoincFile.cpp -pthread -o BoincFile.o
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@ -static-libgcc -static-libstdc++ -pthread $(BOINC_LIBS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -o $@
@@ -28,6 +47,8 @@ BoincFile.o: BoincFile.cpp BoincFile.hpp
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -rf ../bin/$(EXECUTABLE) *.o *~
+	rm -rf ../bin/$(EXECUTABLE) *.o *~ *.d
 
 .PHONY: all clean
+
+-include $(CXXSOURCES:.cpp=.d) $(CSOURCES:.c=.d)

@@ -109,9 +109,7 @@
 */
 
 #include <math.h>
-#ifndef _ERF
 #include "erf.h"
-#endif
 
 /*  assume 32 bit int  */
 typedef int int32_t;
