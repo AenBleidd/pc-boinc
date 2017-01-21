@@ -1,16 +1,18 @@
 # SSE2, 64-bit
 #ARCH += -march=core2 -mtune=core2 -m64
 # AVX, 64-bit
-#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m64
+#ARCH += -march=sandybridge -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m64
 # AVX+FMA, 64-bit
-#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
+#ARCH += -march=haswell -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
 
+# 32-bit, no SIMD
+#ARCH += -m32 -mno-sse
 # SSE2, 32-bit
 #ARCH += -march=core2 -mtune=core2 -m32
 # AVX, 32-bit
-#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m32
+#ARCH += -march=sandybridge -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m32
 # AVX+FMA, 32-bit
-#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m32
+#ARCH += -march=haswell -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m32
 
 CC = gcc
 CXX = g++

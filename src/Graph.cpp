@@ -1,5 +1,5 @@
 /**
-	Copyright (c) 2013,2016, All Rights Reserved.
+	Copyright (c) 2013,2016-2017, All Rights Reserved.
 	
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
@@ -55,10 +55,10 @@ Graph::Graph(const int dim) {
 	standardDeviations = DoubleVector::alloc(nRowsAligned);
 
 	// create rho matrix
-	rho = new double*[nRows];
+	rho = new RHO*[nRows];
 
 	for (int i = 0; i < nRows; i++) {
-		rho[i] = DoubleVector::alloc(nRowsAligned);
+		rho[i] = (RHO*)DoubleVector::alloc(nRowsAligned * 2);
 	}
 
 	score = 0;
@@ -101,7 +101,7 @@ Graph::~Graph(void) {
 
 	// empty the memory for rho
 	for (int i = 0; i < nRows; i++) {
-		DoubleVector::free(rho[i]);
+		DoubleVector::free((double*)rho[i]);
 	}
 	delete[] rho;
 }
@@ -213,14 +213,17 @@ void Graph::computeCorrelations(void) {
 	}*/
 	
 	const DoubleVector v_nCols(static_cast<double>(nCols));
+	const DoubleVector v_1_0(1.0);
 	
 	for (int i = 0; i < nRows; i++) {
 		const double mean_i = means[i];
 		const DoubleVector v_mean_i(mean_i);
-		for (int j = 0; j < nRows; j++) {
+
+		double standardDeviation_i = standardDeviations[i];
+
+		for (int j = 0; j <= i; j++) {
 			const double mean_j = means[j];
 			const DoubleVector v_mean_j(mean_j);
-			//double covariance = 0.0;
 			DoubleVector v_sum;
 
 			int k;
@@ -234,31 +237,13 @@ void Graph::computeCorrelations(void) {
 				covariance += (bioData[i][k] - mean_i) * (bioData[j][k] - mean_j);
 			}
 			
-			rho[i][j] = covariance;
-		}
-
-		const double standardDeviation_i = standardDeviations[i];
-		const DoubleVector v_standardDeviation_i(standardDeviation_i);
-		for (int j = 0; j < nRows; j += DoubleVector::ElementCount) {
-			DoubleVector v_rho(&rho[i][j]);
-			// divide covariance by nCols
-			//rho[i][j] /= nCols;
-			v_rho /= v_nCols;
+			covariance /= nCols;
 
 			// covariance(i, j) / sigma(i) * sigma(j)
-			//rho[i][j] /= (standardDeviation_i * standardDeviations[j]);
-			DoubleVector v_standardDeviation_j(&standardDeviations[j]);
-			v_rho /= v_standardDeviation_i * v_standardDeviation_j;
-			v_rho.store(&rho[i][j]);
+			rho[j][i].v = rho[i][j].v = covariance / (standardDeviation_i * standardDeviations[j]);
+			rho[j][i].vPrime = rho[i][j].vPrime = 1.0 / sqrt(1.0 - rho[i][j].v * rho[i][j].v);
 		}
 	}
-	
-	/* It looks that rho[i][j] == rho[j][i]
-	for (int i = 0; i < nRows; i++) {
-		for (int j = i+1; j < nRows; j++) {
-			rho[j][i] = rho[i][j];
-		}
-	}*/
 }
 
 /** Initialize the boolean matrix to TRUE, but the diagonal, set to FALSE.

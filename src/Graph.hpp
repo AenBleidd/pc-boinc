@@ -1,5 +1,5 @@
 /**
-	Copyright (c) 2013,2016, All Rights Reserved.
+	Copyright (c) 2013,2016-2017, All Rights Reserved.
 	
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
@@ -24,6 +24,12 @@
 #ifndef _GRAPH
 #define _GRAPH
 
+struct RHO
+{
+	double v; // represents values of the correlation matrix
+	double vPrime; // precalculated values: rho' = 1/sqrt(1-rho^2)
+};
+
 /** This class collects all the information to represent the graph.
 */
 class Graph {
@@ -43,7 +49,7 @@ public:
 	std::string* __restrict__ probeIDs; // array that contains the name of each probe taken in account
 	double* __restrict__ standardDeviations; // array that contains the standard deviations for each node in the graph
 	int* __restrict__ numNeighbours; // represents the number of adjacents for each node (thought as column vector)
-	double* __restrict__ * __restrict__ rho; // represents the correlation matrix
+	RHO* __restrict__ * __restrict__ rho; // represents the correlation matrix
 	long long unsigned int score;
 	
 	void initBioDataMatrix(const int); // initialize bioData matrix
