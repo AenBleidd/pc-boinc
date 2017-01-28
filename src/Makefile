@@ -4,6 +4,8 @@
 #ARCH += -march=sandybridge -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m64
 # AVX+FMA, 64-bit
 #ARCH += -march=haswell -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
+# AVX2+FMA, 64-bit
+#ARCH += -march=haswell -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -mavx2 -m64
 
 # 32-bit, no SIMD
 #ARCH += -m32 -mno-sse

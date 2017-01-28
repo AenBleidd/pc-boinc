@@ -59,16 +59,28 @@ typedef SseDoubleVector DoubleVector2;
 
 #ifdef __AVX__
 #ifdef __FMA__
+#ifdef __AVX2__
+#pragma message "Using FMA+AVX2 instructions"
+#else
 #pragma message "Using FMA+AVX instructions"
+#endif
 #else
 #pragma message "Using AVX instructions"
 #endif
-typedef AvxDoubleVector DoubleVector;
-#elif defined (__SSE2__)
-#pragma message "Using SSE2 instructions"
+
+typedef AvxDoubleVector DoubleVectorLong;
 typedef SseDoubleVector DoubleVector;
+#elif defined (__SSE2__)
+#ifdef __FMA__
+#pragma message "Using FMA+SSE2 instructions"
+#else
+#pragma message "Using SSE2 instructions"
+#endif
+typedef SseDoubleVector DoubleVector;
+typedef DoubleVector DoubleVectorLong;
 #else
 typedef ScalarDoubleVector DoubleVector;
+typedef DoubleVector DoubleVectorLong;
 #endif
 
 #elif defined(__aarch64__)
@@ -78,10 +90,12 @@ typedef ScalarDoubleVector DoubleVector;
 typedef Vector<NeonDoubleVectorTraits> NeonDoubleVector;
 typedef NeonDoubleVector DoubleVector2;
 typedef NeonDoubleVector DoubleVector;
+typedef DoubleVector DoubleVectorLong;
 #define HAS_DOUBLE_VECTOR_2 1
 
 #else
 typedef ScalarDoubleVector DoubleVector;
+typedef DoubleVector DoubleVectorLong;
 #endif
 
 #endif // _DOUBLE_VECTOR_HPP_

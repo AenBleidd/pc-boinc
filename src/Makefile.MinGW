@@ -3,7 +3,9 @@
 # AVX, 64-bit
 #ARCH += -march=sandybridge -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -m64
 # AVX+FMA, 64-bit
-#ARCH += -march=haswell -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
+# AVX2+FMA, 64-bit
+#ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -mavx2 -m64
 
 # 32-bit, no SIMD
 #ARCH += -m32 -mno-sse
@@ -17,12 +19,20 @@
 CC = x86_64-w64-mingw32-gcc
 CXX = x86_64-w64-mingw32-g++
 
-#BOINC_DIR = ../../..
+#CC = i686-w64-mingw32-gcc
+#CXX = i686-w64-mingw32-g++
+
 BOINC_DIR = ../../boinc64/
 BOINC_API_DIR = $(BOINC_DIR)/include/boinc
 BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_ZIP_DIR = $(BOINC_DIR)/zip
 BOINC_LIBS = $(BOINC_LIB_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
+
+#BOINC_API_DIR = $(BOINC_DIR)/api
+#BOINC_LIB_DIR = $(BOINC_DIR)/lib
+#BOINC_ZIP_DIR = $(BOINC_DIR)/zip
+#BOINC_LIBS = $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
+
 
 ifdef BOINC_STUB
 BOINC_DIR = ../boinc_stub
