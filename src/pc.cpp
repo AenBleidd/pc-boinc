@@ -1,5 +1,5 @@
 /**
-	Copyright (c) 2013,2016, All Rights Reserved.
+	Copyright (c) 2013,2016-2017, All Rights Reserved.
 	
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
@@ -33,23 +33,65 @@
 #include "BoincFile.hpp"
 #include "DoubleVector.hpp"
 
+#include <time.h>
+
+class Clock
+{
+	clock_t clk;
+
+public:
+	explicit Clock(bool autostart = false)
+	{
+		if (autostart)
+			start();
+	}
+
+	void start()
+	{
+		clk = clock();
+	}
+
+	void stop(const char* msg)
+	{
+		printf("%s: %.3f\n", msg, double(clock() - clk) / CLOCKS_PER_SEC);
+	}
+
+	void stop(const char* msg, int arg)
+	{
+		printf("%s %d: %.3f\n", msg, arg, double(clock() - clk) / CLOCKS_PER_SEC);
+	}
+};
+
 #ifdef _MSC_VER
 #define __attribute__(x)
 #endif
 
 using namespace std;
 
-#ifdef __SSE2__
-static const __m128d vd2_1_0 = { 1.0, 1.0 };
+static const DoubleVector vd_1_0(1.0);
+
+#ifdef HAS_DOUBLE_VECTOR_2
+static const DoubleVector2 vd2_1_0(1.0);
 #endif
-#ifdef __AVX__
-static const __m256d vd4_1_0 = { 1.0, 1.0, 1.0, 1.0 };
+#ifdef HAS_DOUBLE_VECTOR_4
+static const DoubleVector4 vd4_1_0(1.0);
 #endif
 
 __attribute__((hot, always_inline)) static inline
 double pow2(double val)
 {
 	return val * val;
+}
+
+__attribute__((hot, always_inline)) static inline
+double getCorrelationCoefficient1(double a, const RHO& b, const RHO& c)
+{
+#ifdef HAS_DOUBLE_VECTOR_2
+	DoubleVector2 v2 = DoubleVector2(&b.v) * DoubleVector2(&c.v);
+	return (a - v2[0]) * v2[1];
+#else
+	return (a - b.v * c.v) * (b.vPrime * c.vPrime);
+#endif
 }
 
 __attribute__((hot, always_inline)) static inline
@@ -61,12 +103,12 @@ double getCorrelationCoefficient1(double a, double b, double c)
 __attribute__((hot, always_inline)) static inline
 void getCorrelationCoefficient2(double a1, double b1, double c1, double a2, double b2, double c2, double* __restrict__ result)
 {
-#ifdef __SSE2__
-	__m128d va = _mm_set_pd(a2, a1);
-	__m128d vb = _mm_set_pd(b2, b1);
-	__m128d vc = _mm_set_pd(c2, c1);
-	__m128d vres = (va - vb * vc) / _mm_sqrt_pd((vd2_1_0 - vb * vb) * (vd2_1_0 - vc * vc));
-	_mm_store_pd(result, vres);
+#ifdef HAS_DOUBLE_VECTOR_2
+	DoubleVector2 va(a2, a1);
+	DoubleVector2 vb(b2, b1);
+	DoubleVector2 vc(c2, c1);
+	DoubleVector2 vres = (va - vb * vc) / ((vd2_1_0 - vb * vb) * (vd2_1_0 - vc * vc)).sqrt();
+	vres.store(result);
 #else
 	result[0] = getCorrelationCoefficient1(a1, b1, c1);
 	result[1] = getCorrelationCoefficient1(a2, b2, c2);
@@ -77,17 +119,122 @@ __attribute__((hot, always_inline)) static inline
 void getCorrelationCoefficient4(double a1, double b1, double c1, double a2, double b2, double c2,
 		double a3, double b3, double c3, double a4, double b4, double c4, double* __restrict__ result)
 {
-#ifdef __AVX__
-	__m256d va = _mm256_set_pd(a4, a3, a2, a1);
-	__m256d vb = _mm256_set_pd(b4, b3, b2, b1);
-	__m256d vc = _mm256_set_pd(c4, c3, c2, c1);
-	__m256d vres = (va - vb * vc) / _mm256_sqrt_pd((vd4_1_0 - vb * vb) * (vd4_1_0 - vc * vc));
-	_mm256_store_pd(result, vres);
+#ifdef HAS_DOUBLE_VECTOR_4
+	DoubleVector4 va(a4, a3, a2, a1);
+	DoubleVector4 vb(b4, b3, b2, b1);
+	DoubleVector4 vc(c4, c3, c2, c1);
+	DoubleVector4 vres = (va - vb * vc) / ((vd4_1_0 - vb * vb) * (vd4_1_0 - vc * vc)).sqrt();
+	vres.store(result);
 #else
 	getCorrelationCoefficient2(a1, b1, c1, a2, b2, c2, result);
 	getCorrelationCoefficient2(a3, b3, c3, a4, b4, c4, result + 2);
 #endif
 }
+
+__attribute__((hot, always_inline)) static inline
+void loadDataForCorrelations(const int a, const int b, const Graph* __restrict__ g, const int* __restrict__ neighbours,
+	const int* __restrict__ subset, const int l, double * __restrict__ * __restrict__ p) {
+	int dim = l + 2;
+	double* tmpData = p[dim];
+
+	// initialization of p (looks like rho)
+	for (int j = 1; j < dim; j++) {
+		int second;
+
+		if (j == 1) {
+			second = b;
+		} else {
+			second = neighbours[subset[j - 2]];
+		}
+
+		for (int i = 0; i < j; i++) {
+			int first;
+			if (i == 0) {
+				first = a;
+			} else if (i == 1) {
+				first = b;
+			} else {
+				first = neighbours[subset[i - 2]];
+			}
+
+			p[j][i] = g->rho[first][second].v;
+
+			if (j == dim - 1) {
+				tmpData[i] = g->rho[first][second].vPrime;
+			}
+		}
+	}
+}
+
+template<unsigned int K, unsigned int L, bool Last = K == L-1/*+1*/>
+struct Correlations
+{
+	__attribute__((hot, always_inline)) inline
+	static double calc(double * __restrict__ * __restrict__ p)
+	{
+		int dim = L + 2;
+		double* tmpData = p[dim];
+
+		if (K > 1) {
+			for (unsigned int z = 0; z <= (dim - K); z += DoubleVector::ElementCount) {
+				//tmpData[z] = 1.0 / sqrt(1.0 - pow2(p[dim - K][z]));
+
+				DoubleVector v(&p[dim - K][z]);
+				v = vd_1_0 / (vd_1_0 - v * v).sqrt();
+				v.store(&tmpData[z]);
+			}
+		}
+
+		for (unsigned int j = 1; j < (dim - K); j++) {
+			DoubleVector v_p_j_dim_SUB_k(p[dim - K][j]);
+			DoubleVector v_tmpData_j(tmpData[j]);
+
+			for (unsigned int i = 0; i < j; i += DoubleVector::ElementCount) {
+				//p[j][i] = (p[j][i] - p_j_dim_SUB_k * p[dim - K][i]) * (tmpData[i] * tmpData_j);
+
+				DoubleVector v_A(&p[j][i]);
+				DoubleVector v_B(&p[dim - K][i]);
+				DoubleVector v_tmpData_i(&tmpData[i]);
+
+				DoubleVector v = (v_A - v_p_j_dim_SUB_k * v_B) * (v_tmpData_i * v_tmpData_j);
+				v.store(&p[j][i]);
+			}
+		}
+
+		return Correlations<K+1, L>::calc(p);
+	}
+};
+
+template<unsigned int K, unsigned int L>
+struct Correlations<K, L, true>
+{
+	__attribute__((hot, always_inline)) inline
+	static double calc(double * __restrict__ * __restrict__ p)
+	{
+		double result[2] __attribute__((aligned(16)));
+		getCorrelationCoefficient2(p[1][0], p[3][0], p[3][1], p[2][0], p[3][0], p[3][2], result);
+		double cc_1_0 = result[0];
+		double cc_2_0 = result[1];
+		double cc_2_1 = getCorrelationCoefficient1(p[2][1], p[3][1], p[3][2]);
+
+
+		return getCorrelationCoefficient1(cc_1_0, cc_2_0, cc_2_1);
+	}
+};
+
+template<unsigned int L>
+struct GetCorrelation
+{
+	__attribute__((hot, always_inline)) inline
+	static double calc(const int a, const int b, const Graph* __restrict__ g, const int* __restrict__ neighbours,
+		const int* __restrict__ subset, double * __restrict__ * __restrict__ p)
+	{
+		loadDataForCorrelations(a, b, g, neighbours, subset, (int)L, p);
+
+		return Correlations<1, L>::calc(p);
+	}
+};
+
 
 /** Finds the correlation coefficient when l is greater than 1 (formally, when l > 1).
 	
@@ -119,99 +266,94 @@ void getCorrelationCoefficient4(double a1, double b1, double c1, double a2, doub
 __attribute__((hot, always_inline)) static inline
 double correlations(const int a, const int b, const Graph* __restrict__ g, const int* __restrict__ neighbours,
 	const int* __restrict__ subset, const int l, double * __restrict__ * __restrict__ p) {
+	if (4 == l) {
+		return GetCorrelation<4>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (5 == l) {
+		return GetCorrelation<5>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (6 == l) {
+		return GetCorrelation<6>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (7 == l) {
+		return GetCorrelation<7>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (8 == l) {
+		return GetCorrelation<8>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (9 == l) {
+		return GetCorrelation<9>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (10 == l) {
+		return GetCorrelation<10>::calc(a, b, g, neighbours, subset, p);
+	}
+	if (11 == l) {
+		return GetCorrelation<11>::calc(a, b, g, neighbours, subset, p);
+	}
+
+
 	int dim = l + 2;
+	double* tmpData = p[dim];
 
 	// initialization of p (looks like rho)
-	for (int i = 0; i < dim - 1; i++) {
-		int first;
-		if (i == 0) {
-			first = a;
-		} else if (i == 1) {
-			first = b;
+	for (int j = 1; j < dim; j++) {
+		int second;
+
+		if (j == 1) {
+			second = b;
 		} else {
-			first = neighbours[subset[i - 2]];
+			second = neighbours[subset[j - 2]];
 		}
 
-		for (int j = i + 1; j < dim; j++) {
-			int second;
-
-			if (j == 1) {
-				second = b;
+		for (int i = 0; i < j; i++) {
+			int first;
+			if (i == 0) {
+				first = a;
+			} else if (i == 1) {
+				first = b;
 			} else {
-				second = neighbours[subset[j - 2]];
+				first = neighbours[subset[i - 2]];
 			}
 
-			p[i][j] = p[j][i] = g->rho[first][second];
+			p[j][i] = g->rho[first][second].v;
+
+			if (j == dim - 1) {
+				tmpData[i] = g->rho[first][second].vPrime;
+			}
 		}
 	}
 
 	for (int k = 1; k <= l; k++) {
-		for (int i = 0; i <= (l - k); i++) {
-			const double p_i_dim_SUB_k = p[i][dim - k];
-			const double _1_SUB_p_i_dim_SUB_k_sqr = 1 - pow2(p_i_dim_SUB_k);
-#ifdef __AVX__
-			const __m256d v4_p_i_dim_SUB_k = _mm256_set1_pd(p_i_dim_SUB_k);
-			const __m256d v4_1_SUB_p_i_dim_SUB_k_sqr = _mm256_set1_pd(_1_SUB_p_i_dim_SUB_k_sqr);
-#endif
-#ifdef __SSE2__
-			const __m128d v2_p_i_dim_SUB_k = _mm_set1_pd(p_i_dim_SUB_k);
-			const __m128d v2_1_SUB_p_i_dim_SUB_k_sqr = _mm_set1_pd(_1_SUB_p_i_dim_SUB_k_sqr);
-#endif
-			
-			int j = i + 1;
-#ifdef __AVX__
-			for (; j < (dim - k) - 3; j += 4) {
-				__m256d v4_val = _mm256_loadu_pd(&p[dim - k][j]);
-				__m256d v4_2 = _mm256_loadu_pd(&p[i][j]);
-				__m256d v4;
-				v4 = v4_1_SUB_p_i_dim_SUB_k_sqr * (vd4_1_0 - v4_val * v4_val);
-				v4 = _mm256_sqrt_pd(v4);
-				v4 = (v4_2 - v4_p_i_dim_SUB_k * v4_val) / v4;
-				_mm256_storeu_pd(&p[i][j], v4);
-				
-				p[j+0][i] = p[i][j+0];
-				p[j+1][i] = p[i][j+1];
-				p[j+2][i] = p[i][j+2];
-				p[j+3][i] = p[i][j+3];
-			}
-#endif
+		if (k > 1) {
+			for (int z = 0; z <= (dim - k); z += DoubleVector::ElementCount) {
+				//tmpData[z] = 1.0 / sqrt(1.0 - pow2(p[dim - K][z]));
 
-#if defined(__AVX__) || defined(__SSE2__)
-#ifdef __AVX__
-			if (j < (dim - k) - 1) {
-#else
-			for (; j < (dim - k) - 1; j += 2) {
-#endif
-				__m128d v2_val = _mm_loadu_pd(&p[dim - k][j]);
-				__m128d v2_2 = _mm_loadu_pd(&p[i][j]);
-				__m128d v2;
-				v2 = v2_1_SUB_p_i_dim_SUB_k_sqr * (vd2_1_0 - v2_val * v2_val);
-				v2 = _mm_sqrt_pd(v2);
-				v2 = (v2_2 - v2_p_i_dim_SUB_k * v2_val) / v2;
-				_mm_storeu_pd(&p[i][j], v2);
-				
-				p[j+0][i] = p[i][j+0];
-				p[j+1][i] = p[i][j+1];
-#ifdef __AVX__
-				j += 2;
-#endif
+				DoubleVector v(&p[dim - k][z]);
+				v = vd_1_0 / (vd_1_0 - v * v).sqrt();
+				v.store(&tmpData[z]);
 			}
-#endif
+		}
 
-#if defined(__AVX__) || defined(__SSE2__)
-			if (j < (dim - k)) {
-#else
-			for (; j < (dim - k); j++) {
-#endif
-				p[i][j] = p[j][i] = 
-					(p[i][j] - p_i_dim_SUB_k * p[j][dim - k]) /
-					(sqrt( (_1_SUB_p_i_dim_SUB_k_sqr) * (1 - pow2(p[j][dim - k])) ));
+		for (int j = 1; j < (dim - k); j++) {
+			DoubleVector v_p_j_dim_SUB_k(p[dim - k][j]);
+			DoubleVector v_tmpData_j(tmpData[j]);
+
+			for (int i = 0; i < j; i += DoubleVector::ElementCount) {
+				//p[j][i] = (p[j][i] - p_j_dim_SUB_k * p[dim - K][i]) * (tmpData[i] * tmpData_j);
+
+				DoubleVector v_A(&p[j][i]);
+				DoubleVector v_B(&p[dim - k][i]);
+				DoubleVector v_tmpData_i(&tmpData[i]);
+
+				DoubleVector v = (v_A - v_p_j_dim_SUB_k * v_B) * (v_tmpData_i * v_tmpData_j);
+				v.store(&p[j][i]);
 			}
 		}
 	}
 
-	return p[0][1];
+	return p[1][0];
 }
+
 
 /** Tests the causality and, when appropriate, cuts both the edges r->c and c->r.
 	
@@ -302,12 +444,11 @@ double getCorrelationCoefficient(const int* __restrict__ neighbours, const int* 
 		int h1 = neighbours[subset[0]];
 		int h2 = neighbours[subset[1]];
 		
-		double result[2] __attribute__((aligned(16)));
-		getCorrelationCoefficient2(g->rho[r][c], g->rho[r][h2], g->rho[c][h2], g->rho[r][h1], g->rho[r][h2], g->rho[h1][h2], result);
-		rhoRC = result[0];
-		rhoRH1 = result[1];
-		rhoCH1 = getCorrelationCoefficient1(g->rho[c][h1], g->rho[c][h2], g->rho[h1][h2]);
+		rhoRC = getCorrelationCoefficient1(g->rho[r][c].v, g->rho[r][h2], g->rho[c][h2]);
+		rhoRH1 = getCorrelationCoefficient1(g->rho[r][h1].v, g->rho[r][h2], g->rho[h1][h2]);
+		rhoCH1 = getCorrelationCoefficient1(g->rho[c][h1].v, g->rho[c][h2], g->rho[h1][h2]);
 		
+
 		correlationCoefficient = getCorrelationCoefficient1(rhoRC, rhoRH1, rhoCH1);
 	} else if (l == 3) {
 		double rhoRC_H2H3, rhoRH1_H2H3, rhoCH1_H2H3, rhoRC_H3, rhoRH1_H3, rhoRH2_H3, rhoCH1_H3, rhoCH2_H3, rhoH1H2_H3;
@@ -315,22 +456,22 @@ double getCorrelationCoefficient(const int* __restrict__ neighbours, const int* 
 		int h2 = neighbours[subset[1]];
 		int h3 = neighbours[subset[2]];
 
-		double result[4] __attribute__((aligned(32)));
-		getCorrelationCoefficient4(g->rho[r][c], g->rho[r][h3], g->rho[c][h3], g->rho[r][h1], g->rho[r][h3], g->rho[h1][h3],
-				g->rho[r][h2], g->rho[r][h3], g->rho[h2][h3], g->rho[c][h1], g->rho[c][h3], g->rho[h1][h3], result);
-		rhoRC_H3 = result[0];
-		rhoRH1_H3 = result[1];
-		rhoRH2_H3 = result[2];
-		rhoCH1_H3 = result[3];
-		getCorrelationCoefficient2(g->rho[c][h2], g->rho[c][h3], g->rho[h2][h3], g->rho[h1][h2], g->rho[h1][h3], g->rho[h2][h3], result);
-		rhoCH2_H3 = result[0];
-		rhoH1H2_H3 = result[1];
 
+		rhoRC_H3 = getCorrelationCoefficient1(g->rho[r][c].v, g->rho[r][h3], g->rho[c][h3]);
+		rhoRH1_H3 = getCorrelationCoefficient1(g->rho[r][h1].v, g->rho[r][h3], g->rho[h1][h3]);
+		rhoRH2_H3 = getCorrelationCoefficient1(g->rho[r][h2].v, g->rho[r][h3], g->rho[h2][h3]);
+		rhoCH1_H3 = getCorrelationCoefficient1(g->rho[c][h1].v, g->rho[c][h3], g->rho[h1][h3]);
+		rhoCH2_H3 = getCorrelationCoefficient1(g->rho[c][h2].v, g->rho[c][h3], g->rho[h2][h3]);
+		rhoH1H2_H3 = getCorrelationCoefficient1(g->rho[h1][h2].v, g->rho[h1][h3], g->rho[h2][h3]);
+
+
+		double result[2] __attribute__((aligned(16)));
 		getCorrelationCoefficient2(rhoRC_H3, rhoRH2_H3, rhoCH2_H3, rhoRH1_H3, rhoRH2_H3, rhoH1H2_H3, result);
 		rhoRC_H2H3 = result[0];
 		rhoRH1_H2H3 = result[1];
 		rhoCH1_H2H3 = getCorrelationCoefficient1(rhoCH1_H3, rhoCH2_H3, rhoH1H2_H3);
-		
+
+
 		correlationCoefficient = getCorrelationCoefficient1(rhoRC_H2H3, rhoRH1_H2H3, rhoCH1_H2H3);
 	} else {
 		correlationCoefficient = correlations(r, c, g, neighbours, subset, l, p);
@@ -438,16 +579,18 @@ void findAllSubsets(Graph* __restrict__ g, const int i, const int j, const int l
 	int neighboursDim = 0;
 
 	if (l == 0) {
-		testAndRemove(g->rho[i][j], g, i, j, ccRangeMin, ccRangeMax);
+		testAndRemove(g->rho[i][j].v, g, i, j, ccRangeMin, ccRangeMax);
 	} else if (l == 1) {
 		// find neighbours (when l > 0) of i without considering j
-		double rho_i_j = g->rho[i][j];
+		double rho_i_j = g->rho[i][j].v;
 		for (int k = 0; (k < g->nRows) && (neighboursDim < g->numNeighbours[i]); k++) {
 			if (!g->matrix[i][j])
 				break;
 			if (g->matrix[i][k] && (k != j)) {
 				neighboursDim++;
-				double correlationCoefficient = getCorrelationCoefficient1(rho_i_j, g->rho[i][k], g->rho[j][k]);
+				//double correlationCoefficient = getCorrelationCoefficient1(rho_i_j, g->rho[i][k], g->rho[j][k]);
+				double correlationCoefficient = (rho_i_j - g->rho[i][k].v * g->rho[j][k].v) *
+						(g->rho[i][k].vPrime * g->rho[j][k].vPrime);
 				
 				testAndRemove(correlationCoefficient, g, i, j, ccRangeMin, ccRangeMax);
 			}
@@ -469,6 +612,18 @@ __attribute__((hot, noinline)) static
 void pcAlgorithm(Graph* __restrict__ g, double inverseCNDForAlpha, int* __restrict__ neighbours, double* __restrict__ * __restrict__ p,
 		int* __restrict__ currentCombination)
 {
+	Clock c;
+
+	c.start();
+	// compute the standard deviations
+	g->computeStandardDeviations();
+	c.stop("computeStandardDeviations");
+
+	c.start();
+	// compute the correlations coefficients
+	g->computeCorrelations();
+	c.stop("computeCorrelations");
+
 	int l;
 	bool hasWorked; // boolean to see that there is at least an arc i,j s.t. |adj(C, i)\{j}| >= l TO CHECK FROM THE TEXT
 	
@@ -477,6 +632,7 @@ void pcAlgorithm(Graph* __restrict__ g, double inverseCNDForAlpha, int* __restri
 	hasWorked = true;
 	
 	while ((hasWorked) && (l < g->nRows)) {
+		c.start();
 		l++;
 		hasWorked = false;
 		
@@ -496,6 +652,7 @@ void pcAlgorithm(Graph* __restrict__ g, double inverseCNDForAlpha, int* __restri
 				}
 			}
 		}
+		c.stop("pcAlgorithm, l", l);
 	}
 }
 
@@ -578,14 +735,10 @@ int main(int argc, char* argv[]) {
 		// create the graph
 		g = new Graph(tilesDim[c]);
 		
+		Clock clk(true);
 		// extract the subgraph from the complete genes file
 		readCGN(tiles[c], experiments, experimentsDim, g, hibridizationDim);
-
-		// compute the standard deviations
-		g->computeStandardDeviations();
-		
-		// compute the correlations coefficients
-		g->computeCorrelations();
+		clk.stop("Loading");
 
 		// alloc the rho for correlations() (save time)
 		p = new double*[g->nRows];

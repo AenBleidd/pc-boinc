@@ -1,5 +1,5 @@
 /**
-	Copyright (c) 2013,2016, All Rights Reserved.
+	Copyright (c) 2013,2016-2017, All Rights Reserved.
 	
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
@@ -108,5 +108,5 @@ bool BoincFile::getLine(string& out) {
 	@return TRUE if the writing is succefully done, FALSE otherwise.
 */
 bool BoincFile::write(const string& str) {
-	return fputs(str.c_str(), wrappedFile);
+	return fwrite(str.c_str(), sizeof(char), str.size(), wrappedFile) > 0;
 }
