@@ -1,16 +1,16 @@
 /**
 	Copyright (c) 2013,2016, All Rights Reserved.
-	
+
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
 	any purpose.
-	
+
 	utility.hpp
 	This library will contain all the functions used by the PC-algorithm.
-	
+
 	University of Trento,
 	Department of Information Engineering and Computer Science
-	
+
 	Trento, fall 2013 - spring 2014
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
@@ -53,6 +53,6 @@ void fprintEdgesCSV(Graph*, const std::string, const intpair*, const std::string
 int countArcs(bool**, const int, const int);
 
 // Make the post processing evaluation
-void calculatePostProcessing(const std::string);
+void calculatePostProcessing(const std::string const int);
 
 #endif //_UTILITY
