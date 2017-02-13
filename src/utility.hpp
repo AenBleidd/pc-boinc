@@ -53,6 +53,6 @@ void fprintEdgesCSV(Graph*, const std::string, const intpair*, const std::string
 int countArcs(bool**, const int, const int);
 
 // Make the post processing evaluation
-void calculatePostProcessing(const std::string const int);
+void calculatePostProcessing(const std::string, const int);
 
 #endif //_UTILITY
