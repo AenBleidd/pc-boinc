@@ -21,11 +21,11 @@
 
 #include <string>
 #include <iostream>
+#include <cerrno>
 #include "boinc_api.h"
 #include "filesys.h"
 #include "BoincFile.hpp"
 #include <bzlib.h>
-#include <stdio.h>
 
 #define BUFLEN 32768L
 #define DEBUG 0
@@ -122,7 +122,7 @@ bool BoincFile::write(const string& str) {
 
 char* do_gunbzip(const char* strGZ, bool bKeep) {
     unsigned char buf[BUFLEN];
-    long lRead = 0
+    long lRead = 0;
     long lWrite = 0;
     FILE* fIn;
     char* p;
@@ -140,17 +140,17 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
     *p = '\0';
 
     if(!(fIn = fopen(strGZ, "rb"))) {
-        fprintf(stderr, "gunbzip: fopen (r) error (%m) [%s]\n", strGZ);
+        cerr << "gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strGZ << "]" << endl;
         return NULL; // error
     }
 
     lRead = (long) fread(buf, sizeof(char), 2, fIn);
 #ifdef DEBUG
-    printf("header: %x %x\n", buf[0], buf[1]);
+    cout << "header: " << buf[0] << " " << buf[1] << endl;
 #endif
     if(buf[0] != 'B' || buf[1] != 'Z') {
 #ifdef DEBUG
-        printf("gunbzip: bad header (ignored)\n");
+        cout << "gunbzip: bad header (ignored)" << endl;
 #endif
         return (char*) strGZ;  // not gzipped (ignored)
     }
@@ -159,13 +159,13 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
     BZFILE* bzf = BZ2_bzReadOpen(&bzError, fIn, 0, 0, NULL, 0);
 
     if (bzError != BZ_OK) {
-        fprintf(stderr, "gunbzip: BZ2_bzReadOpen: %d\n", bzError);
+        cerr << "gunbzip: BZ2_bzReadOpen: " << bzError << endl;
         return NULL;
     }
 
     FILE* fOut = boinc_fopen(strOut, "wb");
     if (!fOut) {
-        fprintf(stderr, "gunbzip: fopen (w) error (%m)\n");
+        cerr << "gunbzip: fopen (w) error (" << strerror(errno) << ")" << endl;
         return NULL; // error
     }
 
@@ -175,17 +175,17 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
         if (bzError == BZ_OK || bzError == BZ_STREAM_END) {
             lWrite = fwrite(buf, 1, lRead, fOut);
 #ifdef DEBUG
-            printf("%ld %ld\n", lRead, lWrite);
+            cout << lRead << " " << lWrite << endl;
 #endif
             if (lWrite != lRead) {
-                fprintf(stderr, "gunbzip: short write\n");
+                cerr << "gunbzip: short write" << endl;
                 return NULL;
             }
         }
     }
 
     if (bzError != BZ_STREAM_END) {
-        fprintf(stderr, "gunbzip: bzip error after read: %d\n", bzError);
+        cerr << "gunbzip: bzip error after read: " << bzError << endl;
         return NULL;
     }
 
