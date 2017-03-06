@@ -387,6 +387,17 @@ void calculatePostProcessing(const string filename, const int cut_results) {
 	BoincFile file;
 	string line;
 	ostringstream strs;
+	size_t found;
+
+	// check outputfile format --- if it has alredy been processed
+	file.open(filename, "rb");
+	file.getLine(line)
+	size_t found = line.find('\t')
+	file.close();
+
+	if (found != string::npos) {
+		return
+	}
 
 	file.open(filename, "rb");
 
