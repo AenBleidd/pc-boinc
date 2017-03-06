@@ -691,7 +691,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc != 7) {
 		cerr << "[E] wrong input parameters" << endl;
-		cerr << "Usage: ./pc.exe tiles output_file alpha n_experiments n_hibridizations" << endl;
+		cerr << "Usage: ./pc.exe tiles output_file alpha n_experiments n_hibridizations cutoff" << endl;
 		return -1;
 	}
 
