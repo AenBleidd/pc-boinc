@@ -708,7 +708,7 @@ int main(int argc, char* argv[]) {
 	tmp = asctime(timeinfo);
 	cerr << "Start  @ " << tmp;
 	tilePath = new string(argv[1]);
-	tmp = do_gunbzip(tilePath->c_str(), true)
+	tmp = do_gunbzip(tilePath->c_str(), true);
 
 	if (tmp == NULL) {
 		exit(boinc_finish(0));
