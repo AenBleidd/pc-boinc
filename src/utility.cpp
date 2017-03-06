@@ -391,7 +391,7 @@ void calculatePostProcessing(const string filename, const int cut_results) {
 	// check outputfile format --- if it has alredy been processed
 	file.open(filename, "rb");
 	file.getLine(line);
-	size_t found = line.find('\t')
+	size_t found = line.find('\t');
 	file.close();
 
 	if (found != string::npos) {
