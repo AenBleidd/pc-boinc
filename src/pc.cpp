@@ -708,7 +708,7 @@ int main(int argc, char* argv[]) {
 	tmp = asctime(timeinfo);
 	cerr << "Start  @ " << tmp;
 	tilePath = new string(argv[1]);
-	tilePath = new string(do_gunbzip(tilePath.c_str(), true)); // compressed?
+	tilePath = new string(do_gunbzip(tilePath->c_str(), true)); // compressed?
 	outputFile = new string(argv[2]);
 	experimentsDim = atoi(argv[4]);
 	hibridizationDim = atoi(argv[5]);
