@@ -48,7 +48,6 @@ bool BoincFile::open(const string& path, const string& mode) {
 	char* strGZ = NULL;
 
 	if (boinc_is_standalone()) {
-		strGZ = do_gunbzip(path.c_str(), true); // compress?
 		wrappedFile = fopen(strGZ, mode.c_str()); // no need to resolve the logical path
 	} else {
 		string resolvedName;
@@ -59,7 +58,6 @@ bool BoincFile::open(const string& path, const string& mode) {
 			return false;
 		}
 
-		strGZ = do_gunbzip(resolvedName.c_str(), true); // compress?
 		wrappedFile = boinc_fopen(strGZ, mode.c_str());
 	}
 
@@ -120,7 +118,7 @@ bool BoincFile::write(const string& str) {
 }
 
 
-char* do_gunbzip(const char* strGZ, bool bKeep) {
+string* do_gunbzip(const char* strGZ, bool bKeep) {
     unsigned char buf[BUFLEN];
     long lRead = 0;
     long lWrite = 0;
@@ -197,5 +195,5 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
         boinc_delete_file(strGZ);
     }
 
-    return strOut;
+    return new string(str(strOut));
 }

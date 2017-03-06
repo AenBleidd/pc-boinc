@@ -709,6 +709,8 @@ int main(int argc, char* argv[]) {
 	cerr << "Start  @ " << tmp;
 
 	tilePath = new string(argv[1]);
+	tilePath = do_gunbzip(tilePath.c_str(), true); // compressed?
+
 	outputFile = new string(argv[2]);
 	experimentsDim = atoi(argv[4]);
 	hibridizationDim = atoi(argv[5]);
@@ -804,31 +806,29 @@ int main(int argc, char* argv[]) {
 	}
 
 	/*** START CRITICAL SECTION ***/
-	if (!boinc_is_standalone()) {
-		boinc_begin_critical_section();
+	boinc_begin_critical_section();
 
-		// write the last results not saved
-		if (strcmp(resultsNotSaved.c_str(), "") != 0) {
-			BoincFile out;
+	// write the last results not saved
+	if (strcmp(resultsNotSaved.c_str(), "") != 0) {
+		BoincFile out;
 
-			if (out.open(*(outputFile), "ab")) {
-				//... if there are then save them!
-				out.write(resultsNotSaved);
-				out.close();
-			} else {
-				cerr << "[E] Cannot open \"" << *(outputFile) << "\"" << endl;
-			}
+		if (out.open(*(outputFile), "ab")) {
+			//... if there are then save them!
+			out.write(resultsNotSaved);
+			out.close();
+		} else {
+			cerr << "[E] Cannot open \"" << *(outputFile) << "\"" << endl;
 		}
-
-		//calculate the post processing to return a more compressed file
-		calculatePostProcessing(*(outputFile), cut_results);
-
-		// print score
-		cerr << "|" << score << "|" << endl;
-
-		boinc_end_critical_section();
-	/*** END of CRITICAL SECTION ***/
 	}
+
+	//calculate the post processing to return a more compressed file
+	calculatePostProcessing(*(outputFile), cut_results);
+
+	// print score
+	cerr << "|" << score << "|" << endl;
+
+	boinc_end_critical_section();
+	/*** END of CRITICAL SECTION ***/
 
 	// print a timestamp
 	time(&rawtime);
