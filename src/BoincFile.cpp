@@ -118,7 +118,7 @@ bool BoincFile::write(const string& str) {
 }
 
 
-string* do_gunbzip(const char* strGZ, bool bKeep) {
+char* do_gunbzip(const char* strGZ, bool bKeep) {
     unsigned char buf[BUFLEN];
     long lRead = 0;
     long lWrite = 0;
@@ -195,5 +195,5 @@ string* do_gunbzip(const char* strGZ, bool bKeep) {
         boinc_delete_file(strGZ);
     }
 
-    return new string(str(strOut));
+    return strOut;
 }
