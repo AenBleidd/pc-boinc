@@ -125,6 +125,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	char* p;
 	int bzError;
 	char* strOut = strdup(strGZ);
+	char* strIN;
+	char* strOUT;
 
 	if((p = strrchr(strOut, '.')) == NULL) {
 		return (char*) strGZ;   // no dots (ignored)
