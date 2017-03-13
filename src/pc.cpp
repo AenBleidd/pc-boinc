@@ -707,8 +707,22 @@ int main(int argc, char* argv[]) {
 	timeinfo = localtime(&rawtime);
 	tmp = asctime(timeinfo);
 	cerr << "Start  @ " << tmp;
-	tilePath = new string(argv[1]);
-	tmp = do_gunbzip(tilePath->c_str(), true);
+
+	if (boinc_is_standalone()) {
+		tmp = argv[1];
+	} else {
+		char* resolvedName = (char*) malloc(PATH_MAX);
+		bool fail = boinc_resolve_filename(argv[1], resolvedName, PATH_MAX);
+
+		if (fail) {
+			cerr << "[E] Cannot resolve \"" << argv[1] << "\"" << endl;
+			exit(boinc_finish(0));
+		}
+
+		tmp = resolvedName;
+	}
+
+	tmp = do_gunbzip(tmp, true);
 
 	if (tmp == NULL) {
 		exit(boinc_finish(0));

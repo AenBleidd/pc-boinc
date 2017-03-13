@@ -45,7 +45,6 @@ using namespace std;
 bool BoincFile::open(const string& path, const string& mode) {
 	bufPos = 0;
 	bufSize = 0;
-	char* strGZ = NULL;
 
 	if (boinc_is_standalone()) {
 		wrappedFile = fopen(path.c_str(), mode.c_str()); // no need to resolve the logical path
@@ -58,7 +57,7 @@ bool BoincFile::open(const string& path, const string& mode) {
 			return false;
 		}
 
-		wrappedFile = boinc_fopen(strGZ, mode.c_str());
+		wrappedFile = boinc_fopen(resolvedName.c_str(), mode.c_str());
 	}
 
 	return (wrappedFile != NULL);
