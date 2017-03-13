@@ -139,7 +139,7 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	*p = '\0';
 
 	if (boinc_is_standalone()) {
-		strIN = strGZ;
+		strIN = (char*) strGZ;
 	} else {
 		strIN = (char*) malloc(PATH_MAX);
 		bool fail = boinc_resolve_filename(strGZ, strIN, PATH_MAX);
