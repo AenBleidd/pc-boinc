@@ -118,81 +118,105 @@ bool BoincFile::write(const string& str) {
 
 
 char* do_gunbzip(const char* strGZ, bool bKeep) {
-    unsigned char buf[BUFLEN];
-    long lRead = 0;
-    long lWrite = 0;
-    FILE* fIn;
-    char* p;
-    int bzError;
-    char* strOut = strdup(strGZ);
+	unsigned char buf[BUFLEN];
+	long lRead = 0;
+	long lWrite = 0;
+	FILE* fIn;
+	char* p;
+	int bzError;
+	char* strOut = strdup(strGZ);
 
-    if((p = strrchr(strOut, '.')) == NULL) {
-        return (char*) strGZ;   // no dots (ignored)
-    }
+	if((p = strrchr(strOut, '.')) == NULL) {
+		return (char*) strGZ;   // no dots (ignored)
+	}
 
-    if(strcmp(p, ".bz2") != 0) {
-        return (char*) strGZ;   // not .gz (ignored)
-    }
+	if(strcmp(p, ".bz2") != 0) {
+		return (char*) strGZ;   // not .gz (ignored)
+	}
 
-    *p = '\0';
+	*p = '\0';
 
-    if(!(fIn = fopen(strGZ, "rb"))) {
-        cerr << "gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strGZ << "]" << endl;
-        return NULL; // error
-    }
+	if (boinc_is_standalone()) {
+		strIN = strGZ;
+	} else {
+		strIN = (char*) malloc(PATH_MAX);
+		bool fail = boinc_resolve_filename(strGZ, strIN, PATH_MAX);
 
-    lRead = (long) fread(buf, sizeof(char), 2, fIn);
+		if (fail) {
+			cerr << "[E] Cannot resolve \"" << strGZ << "\"" << endl;
+			return NULL;
+		}
+	}
+
+	if(!(fIn = fopen(strIN, "rb"))) {
+		cerr << "gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strIN << "]" << endl;
+		return NULL; // error
+	}
+
+	lRead = (long) fread(buf, sizeof(char), 2, fIn);
 #ifdef DEBUG
-    cout << "header: " << buf[0] << " " << buf[1] << endl;
+	cout << "header: " << buf[0] << " " << buf[1] << endl;
 #endif
-    if(buf[0] != 'B' || buf[1] != 'Z') {
+	if(buf[0] != 'B' || buf[1] != 'Z') {
 #ifdef DEBUG
-        cout << "gunbzip: bad header (ignored)" << endl;
+		cout << "gunbzip: bad header (ignored)" << endl;
 #endif
-        return (char*) strGZ;  // not gzipped (ignored)
-    }
+		return (char*) strIN;  // not gzipped (ignored)
+	}
 
-    fseek(fIn, 0, SEEK_SET);
-    BZFILE* bzf = BZ2_bzReadOpen(&bzError, fIn, 0, 0, NULL, 0);
+	fseek(fIn, 0, SEEK_SET);
+	BZFILE* bzf = BZ2_bzReadOpen(&bzError, fIn, 0, 0, NULL, 0);
 
-    if (bzError != BZ_OK) {
-        cerr << "gunbzip: BZ2_bzReadOpen: " << bzError << endl;
-        return NULL;
-    }
+	if (bzError != BZ_OK) {
+		cerr << "gunbzip: BZ2_bzReadOpen: " << bzError << endl;
+		return NULL;
+	}
 
-    FILE* fOut = boinc_fopen(strOut, "wb");
-    if (!fOut) {
-        cerr << "gunbzip: fopen (w) error (" << strerror(errno) << ")" << endl;
-        return NULL; // error
-    }
+	if (boinc_is_standalone()) {
+		strOUT = strOut;
+	} else {
+		strOUT = (char*) malloc(PATH_MAX);
+		bool fail = boinc_resolve_filename(strOut, strOUT, PATH_MAX);
 
-    while (bzError == BZ_OK) {
-        lRead = BZ2_bzRead(&bzError, bzf, buf, BUFLEN);
+		if (fail) {
+			cerr << "[E] Cannot resolve \"" << strOUT << "\"" << endl;
+			return NULL;
+		}
+	}
 
-        if (bzError == BZ_OK || bzError == BZ_STREAM_END) {
-            lWrite = fwrite(buf, 1, lRead, fOut);
+	FILE* fOut = boinc_fopen(strOUT, "wb");
+	if (!fOut) {
+		cerr << "gunbzip: fopen (w) error (" << strerror(errno) << ")" << endl;
+		return NULL; // error
+	}
+
+	while (bzError == BZ_OK) {
+		lRead = BZ2_bzRead(&bzError, bzf, buf, BUFLEN);
+
+		if (bzError == BZ_OK || bzError == BZ_STREAM_END) {
+			lWrite = fwrite(buf, 1, lRead, fOut);
 #ifdef DEBUG
-            cout << lRead << " " << lWrite << endl;
+			cout << lRead << " " << lWrite << endl;
 #endif
-            if (lWrite != lRead) {
-                cerr << "gunbzip: short write" << endl;
-                return NULL;
-            }
-        }
-    }
+			if (lWrite != lRead) {
+				cerr << "gunbzip: short write" << endl;
+				return NULL;
+			}
+		}
+	}
 
-    if (bzError != BZ_STREAM_END) {
-        cerr << "gunbzip: bzip error after read: " << bzError << endl;
-        return NULL;
-    }
+	if (bzError != BZ_STREAM_END) {
+		cerr << "gunbzip: bzip error after read: " << bzError << endl;
+		return NULL;
+	}
 
-    BZ2_bzReadClose(&bzError, bzf);
-    fclose(fIn);
-    fclose(fOut);
+	BZ2_bzReadClose(&bzError, bzf);
+	fclose(fIn);
+	fclose(fOut);
 
-    if (!bKeep) {
-        boinc_delete_file(strGZ);
-    }
+	if (!bKeep) {
+		boinc_delete_file(strGZ);
+	}
 
-    return strOut;
+	return strOUT;
 }
