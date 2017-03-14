@@ -1,16 +1,16 @@
 /**
 	Copyright (c) 2013,2016, All Rights Reserved.
-	
+
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
 	any purpose.
-	
+
 	BoincFile.hpp
 	Library header for managing I/O in files within the BOINC infrastructure.
-	
+
 	University of Trento,
 	Department of Information Engineering and Computer Science
-	
+
 	Trento, fall 2013 - spring 2014
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
@@ -39,5 +39,7 @@ private:
 	size_t bufPos;
 	size_t bufSize;
 };
+
+char* do_gunbzip(const char*, bool);
 
 #endif //_BOINCFILE

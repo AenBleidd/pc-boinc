@@ -1,16 +1,16 @@
 /**
 	Copyright (c) 2013,2016-2017, All Rights Reserved.
-	
+
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
 	any purpose.
-	
+
 	pc.cpp
 	[TODO]
-	
+
 	University of Trento,
 	Department of Information Engineering and Computer Science
-	
+
 	Trento, fall 2013 - spring 2014
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
@@ -237,7 +237,7 @@ struct GetCorrelation
 
 
 /** Finds the correlation coefficient when l is greater than 1 (formally, when l > 1).
-	
+
 	@param const int a
 	Index of the selected row, that also represents the "departure" node i of an edge i->j.
 
@@ -260,7 +260,7 @@ struct GetCorrelation
 
 	@param double ** p
 	Rho value.
-	
+
 	@return The decimal value of the computed correlation for the edge a->b depending on the given neighbours' subset.
 */
 __attribute__((hot, always_inline)) static inline
@@ -356,11 +356,11 @@ double correlations(const int a, const int b, const Graph* __restrict__ g, const
 
 
 /** Tests the causality and, when appropriate, cuts both the edges r->c and c->r.
-	
+
 	Tests the causality w.r.t. the correlation coefficient calculating the probability value of causal dependency.
 	Whether this value is greater than the alpha value (complement of confidence interval), both the edges r->c
-	and c->r are cutted. 
-	
+	and c->r are cutted.
+
 	@param double correlationCoefficient
 	Correlation coefficient of the edge r->c.
 
@@ -375,12 +375,12 @@ double correlations(const int a, const int b, const Graph* __restrict__ g, const
 
 	@param const int l
 	Reached dimension actually taken into account for the subset cardinality.
-	In this case l is greater than 1 (formally, l > 1).	
+	In this case l is greater than 1 (formally, l > 1).
 
 	@param const double alpha
 	Complement of the confidence interval.
 
-	@return nothing.	
+	@return nothing.
 */
 
 __attribute__((hot, always_inline)) static inline
@@ -395,7 +395,7 @@ bool IsNan(double val) {
 __attribute__((hot, always_inline)) static inline
 void testAndRemove(double correlationCoefficient, Graph* __restrict__ g, const int r, const int c, const double ccRangeMin, const double ccRangeMax) {
 	++g->score;
-	
+
 	if (IsNan(correlationCoefficient) || ((ccRangeMin <= correlationCoefficient) && (correlationCoefficient <= ccRangeMax))) {
 		// remove arcs
 		g->matrix[r][c] = g->matrix[c][r] = false;
@@ -408,7 +408,7 @@ void testAndRemove(double correlationCoefficient, Graph* __restrict__ g, const i
 
 /** Computes the correlation coefficient related to the edge r->c considering
 	subsets of cardinality l of neaighbour edges.
-	
+
 	@param int* neighbours
 	Set of the indexes of the nearby nodes of the given edge i->j
 
@@ -432,22 +432,22 @@ void testAndRemove(double correlationCoefficient, Graph* __restrict__ g, const i
 	@param double** p
 	Rho.
 
-	@return The coefficient of correlation.	
+	@return The coefficient of correlation.
 */
 __attribute__((hot, always_inline)) static inline
 double getCorrelationCoefficient(const int* __restrict__ neighbours, const int* __restrict__ subset, const int l,
 	Graph* __restrict__ g, const int r, const int c, double* __restrict__ * __restrict__ p) {
 	double correlationCoefficient;
-	
+
 	if (l == 2) {
 		double rhoRC, rhoRH1, rhoCH1;
 		int h1 = neighbours[subset[0]];
 		int h2 = neighbours[subset[1]];
-		
+
 		rhoRC = getCorrelationCoefficient1(g->rho[r][c].v, g->rho[r][h2], g->rho[c][h2]);
 		rhoRH1 = getCorrelationCoefficient1(g->rho[r][h1].v, g->rho[r][h2], g->rho[h1][h2]);
 		rhoCH1 = getCorrelationCoefficient1(g->rho[c][h1].v, g->rho[c][h2], g->rho[h1][h2]);
-		
+
 
 		correlationCoefficient = getCorrelationCoefficient1(rhoRC, rhoRH1, rhoCH1);
 	} else if (l == 3) {
@@ -507,8 +507,8 @@ double getCorrelationCoefficient(const int* __restrict__ neighbours, const int* 
 	@param double** p
 	Rho.
 
-	@return nothing. 
-	
+	@return nothing.
+
 	@see Thanks to Ilya Bursov, http://stackoverflow.com/questions/19327847/n-choose-k-for-large-n-and-k
 */
 __attribute__((hot, always_inline)) static inline
@@ -545,7 +545,7 @@ void iterativeComb(int* __restrict__ neighbours, const int neighboursDim, const 
 }
 
 /** Finds all the subsets adj(i)\{j} with cardinality equals to l (formally, |adj(i)\{j}| = l).
-	
+
 	@param Graph* &g
 	The reference of the Graph object representing the gene network.
 
@@ -591,7 +591,7 @@ void findAllSubsets(Graph* __restrict__ g, const int i, const int j, const int l
 				//double correlationCoefficient = getCorrelationCoefficient1(rho_i_j, g->rho[i][k], g->rho[j][k]);
 				double correlationCoefficient = (rho_i_j - g->rho[i][k].v * g->rho[j][k].v) *
 						(g->rho[i][k].vPrime * g->rho[j][k].vPrime);
-				
+
 				testAndRemove(correlationCoefficient, g, i, j, ccRangeMin, ccRangeMax);
 			}
 		}
@@ -626,21 +626,21 @@ void pcAlgorithm(Graph* __restrict__ g, double inverseCNDForAlpha, int* __restri
 
 	int l;
 	bool hasWorked; // boolean to see that there is at least an arc i,j s.t. |adj(C, i)\{j}| >= l TO CHECK FROM THE TEXT
-	
+
 	// start with l = 0 & hasWorked = true
 	l = -1;
 	hasWorked = true;
-	
+
 	while ((hasWorked) && (l < g->nRows)) {
 		c.start();
 		l++;
 		hasWorked = false;
-		
+
 		double expVal = exp(inverseCNDForAlpha / (sqrt(g->nCols - l - 3.0) * 0.5));
-		
+
 		double ccRangeMin = (1.0 - expVal) / (1.0 + expVal);
 		double ccRangeMax = -ccRangeMin;
-		
+
 		for (int i = 0; i < g->nRows; i++) {
 			if (g->numNeighbours[i] <= l)
 				continue;
@@ -657,7 +657,7 @@ void pcAlgorithm(Graph* __restrict__ g, double inverseCNDForAlpha, int* __restri
 }
 
 /** Body of the PC algorithm.
-	
+
 	@see [TODO reference to the paper]
 */
 int main(int argc, char* argv[]) {
@@ -665,7 +665,7 @@ int main(int argc, char* argv[]) {
 	int experimentsDim; // number of experiment files to be read
 	int hibridizationDim; // total number of columns of all experiment files
 	int* tilesDim = NULL; // array that contains the length of each tiles read
-	int tileRows; // number of rows of the tile.txt file 
+	int tileRows; // number of rows of the tile.txt file
 	//bool hasWorked; // boolean to see that there is at least an arc i,j s.t. |adj(C, i)\{j}| >= l TO CHECK FROM THE TEXT
 	intpair** tiles = NULL; // array that contains the numbers of the rows that will be extracted and represent the subgraph
 	Graph* __restrict__ g = NULL; // the graph
@@ -687,15 +687,16 @@ int main(int argc, char* argv[]) {
 	long long unsigned int score = 0;
 	double inverseCNDForAlpha;
 	int* __restrict__ currentCombination;
-	
-	if (argc != 6) {
+	int cut_results;
+
+	if (argc != 7) {
 		cerr << "[E] wrong input parameters" << endl;
-		cerr << "Usage: ./pc.exe tiles output_file alpha n_experiments n_hibridizations" << endl;
+		cerr << "Usage: ./pc.exe tiles output_file alpha n_experiments n_hibridizations cutoff" << endl;
 		return -1;
 	}
 
 	retval = boinc_init();
-	
+
 	if (retval) {
 		cerr << boinc_msg_prefix(buf, sizeof(buf)) << " boinc_init() returned: " << retval;
 		exit(retval);
@@ -706,11 +707,18 @@ int main(int argc, char* argv[]) {
 	timeinfo = localtime(&rawtime);
 	tmp = asctime(timeinfo);
 	cerr << "Start  @ " << tmp;
-	
-	tilePath = new string(argv[1]);
+
+	tmp = do_gunbzip(argv[1], true);
+
+	if (tmp == NULL) {
+		exit(boinc_finish(0));
+	}
+
+	tilePath = new string(tmp); // compressed?
 	outputFile = new string(argv[2]);
 	experimentsDim = atoi(argv[4]);
 	hibridizationDim = atoi(argv[5]);
+	cut_results = atoi(argv[6]);
 
 	if (isFloat(argv[3])) {
 		alpha = atof(argv[3]);
@@ -718,7 +726,7 @@ int main(int argc, char* argv[]) {
 		alpha = 0.05;
 		cerr << "[E] alpha not a float. Use the default value " << alpha << endl;
 	}
-	
+
 	inverseCNDForAlpha = inverseComulativeNormalDistribution(1.0 - (alpha / 2.0));
 
 	// istantiate the array of string
@@ -734,7 +742,7 @@ int main(int argc, char* argv[]) {
 
 		// create the graph
 		g = new Graph(tilesDim[c]);
-		
+
 		Clock clk(true);
 		// extract the subgraph from the complete genes file
 		readCGN(tiles[c], experiments, experimentsDim, g, hibridizationDim);
@@ -742,7 +750,7 @@ int main(int argc, char* argv[]) {
 
 		// alloc the rho for correlations() (save time)
 		p = new double*[g->nRows];
-		
+
 		for (int i = 0; i < g->nRows; i++) {
 			p[i] = DoubleVector::alloc(g->nRowsAligned);
 			if (g->nRowsAligned > g->nRows) {
@@ -787,59 +795,57 @@ int main(int argc, char* argv[]) {
 		// save the partial score
 		// originally score was incremented only every 1000 calls of testAndRemove
 		score += g->score / 1000;
-		
-		// free the memory		
+
+		// free the memory
 		delete[] neighbours;
 
 		for (int i = 0; i < g->nRows; i++) {
 			DoubleVector::free(p[i]);
 		}
 		delete[] p;
-		
+
 		delete[] currentCombination;
 
 		delete g;
 	}
 
 	/*** START CRITICAL SECTION ***/
-	if (!boinc_is_standalone()) {
-		boinc_begin_critical_section();
+	boinc_begin_critical_section();
 
-		// write the last results not saved
-		if (strcmp(resultsNotSaved.c_str(), "") != 0) {
-			BoincFile out;
+	// write the last results not saved
+	if (strcmp(resultsNotSaved.c_str(), "") != 0) {
+		BoincFile out;
 
-			if (out.open(*(outputFile), "ab")) {
-				//... if there are then save them!
-				out.write(resultsNotSaved);
-				out.close();
-			} else {
-				cerr << "[E] Cannot open \"" << *(outputFile) << "\"" << endl;
-			}
+		if (out.open(*(outputFile), "ab")) {
+			//... if there are then save them!
+			out.write(resultsNotSaved);
+			out.close();
+		} else {
+			cerr << "[E] Cannot open \"" << *(outputFile) << "\"" << endl;
 		}
-
-		//calculate the post processing to return a more compressed file
-		calculatePostProcessing(*(outputFile));
-
-		// print score
-		cerr << "|" << score << "|" << endl;
-
-		boinc_end_critical_section();
-	/*** END of CRITICAL SECTION ***/
 	}
+
+	//calculate the post processing to return a more compressed file
+	calculatePostProcessing(*(outputFile), cut_results);
+
+	// print score
+	cerr << "|" << score << "|" << endl;
+
+	boinc_end_critical_section();
+	/*** END of CRITICAL SECTION ***/
 
 	// print a timestamp
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	tmp = asctime(timeinfo);
 	cerr << "Finish @ " << tmp;
-	
+
 	// free the memory
 	for (int i = 0; i < tileRows; i++) {
 		delete[] tiles[i];
 	}
 	delete[] tiles;
-	
+
 	for (int i = 0; i < experimentsDim; i++) {
 		delete experiments[i];
 	}

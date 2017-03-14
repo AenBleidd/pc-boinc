@@ -1,17 +1,17 @@
 /**
 	Copyright (c) 2013,2016, All Rights Reserved.
-	
+
 	This software is in the public domain, furnished "as is", without technical
 	support, and with no warranty, express or implied, as to its usefulness for
 	any purpose.
-	
+
 	utlity.cpp
 	File with utility functions for an efficient computation of the PC
 	algorithm for gene networks expansion.
-	
+
 	University of Trento,
 	Department of Information Engineering and Computer Science
-	
+
 	Trento, fall 2013 - spring 2014
 
 	Authors: (alphabetically ordered) Francesco Asnicar, Luca Masera,
@@ -35,10 +35,10 @@
 using namespace std;
 
 /** Compares two pairs of the type <probe identifier, lookup index>.
-	
+
 	@param const intpair &l
 	First intpair (formally <p1,l1>).
-	
+
 	@param const intpair &r
 	Second intpair (formally <p1,l1>).
 
@@ -46,7 +46,7 @@ using namespace std;
 	TRUE if p1 is less than p2 (formally p1 < p2). Otherwise FALSE.
 */
 bool comparator (const intpair &l, const intpair &r) {
-	return l.first < r.first; 
+	return l.first < r.first;
 }
 
 /** Reads the file TILE modifying both sizes and data.
@@ -145,7 +145,7 @@ void readTile(const string tilePath, int* &tilesDim, intpair** &tiles, int &tile
 		sort(tiles[i], tiles[i] + tilesDim[i]);
 	}
  }
- 
+
  /**
   *
   */
@@ -158,7 +158,7 @@ void readTile(const string tilePath, int* &tilesDim, intpair** &tiles, int &tile
 	// expp.close();
 
 	stringstream stream(line1);
-	
+
 	for (int i = 0; (getline(stream, line, ' ') && (i < experimentsDim)); i++) {
 		experiments[i] = new string(line);
 	}
@@ -170,7 +170,7 @@ void readTile(const string tilePath, int* &tilesDim, intpair** &tiles, int &tile
 	Path of the file containing the complete gene network.
 
 	@param const intpair* nodesPermutation
-	Permutation of the nodes taken into consideration. 
+	Permutation of the nodes taken into consideration.
 
 	@param Graph* &g
 	The reference of the Graph object representing the gene network.
@@ -182,7 +182,7 @@ void readCGN(const intpair* __restrict__ nodesPermutation, string* __restrict__ 
 	BoincFile cgn;
 	string line;
 	int column = 0;
-	
+
 	line.reserve(50*1024);
 
 	// Initializes the bioData matrix
@@ -237,7 +237,7 @@ void readCGN(const intpair* __restrict__ nodesPermutation, string* __restrict__ 
 
 /** Computes the continous density function.
 	M_SQRT1_2 takes value 1/sqrt(2).
-	
+
 	@param const double value
 	Value for which it will be computed its cumulative normal distribution.
 
@@ -287,7 +287,7 @@ double inverseComulativeNormalDistribution(const double value) {
 }
 
 /** Checks if a given string (of the form array of chars) whether representing a float number or not.
-	
+
 	@param const char* number
 	String (or, rather, array of characters) that should represent a decimal number.
 
@@ -317,7 +317,7 @@ bool isFloat(const char* number) {
 	The Graph object representing the gene network.
 
 	@param const intpair* nodesPermutation
-	Permutation of the nodes taken into consideration. 
+	Permutation of the nodes taken into consideration.
 
 	@param const string fileName
 	Name of the output file.
@@ -382,14 +382,24 @@ int countArcs(bool** matrix, const int rows, const int cols) {
 /**
  *
  */
-void calculatePostProcessing(const string filename) {
+void calculatePostProcessing(const string filename, const int cut_results) {
 	map<string, int> postProcessing;
 	BoincFile file;
 	string line;
 	ostringstream strs;
 
+	// check outputfile format --- if it has alredy been processed
 	file.open(filename, "rb");
-	
+	file.getLine(line);
+	size_t found = line.find('\t');
+	file.close();
+
+	if (found != string::npos) {
+		return;
+	}
+
+	file.open(filename, "rb");
+
 	// count the numbers of rows
 	while (file.getLine(line)) {
 		if(postProcessing[line] == 0) {
@@ -400,12 +410,14 @@ void calculatePostProcessing(const string filename) {
 	}
 
 	file.close();
-	
+
 	// write the output file in the format "arc<TAB>count"
 	file.open(filename, "wb");
-	
+
 	for (map<string, int>::iterator it = postProcessing.begin(); it != postProcessing.end(); it++) {
-		strs << it->first << "\t" << it->second << "\n";
+		if (it->second > cut_results) {
+			strs << it->first << "\t" << it->second << "\n";
+		}
 	}
 
 	file.write(strs.str());
