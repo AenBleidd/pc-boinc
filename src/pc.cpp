@@ -115,7 +115,7 @@ void getCorrelationCoefficient2(double a1, double b1, double c1, double a2, doub
 #endif
 }
 
-__attribute__((hot, always_inline)) static inline
+/*__attribute__((hot, always_inline)) static inline
 void getCorrelationCoefficient4(double a1, double b1, double c1, double a2, double b2, double c2,
 		double a3, double b3, double c3, double a4, double b4, double c4, double* __restrict__ result)
 {
@@ -129,7 +129,7 @@ void getCorrelationCoefficient4(double a1, double b1, double c1, double a2, doub
 	getCorrelationCoefficient2(a1, b1, c1, a2, b2, c2, result);
 	getCorrelationCoefficient2(a3, b3, c3, a4, b4, c4, result + 2);
 #endif
-}
+}*/
 
 __attribute__((hot, always_inline)) static inline
 void loadDataForCorrelations(const int a, const int b, const Graph* __restrict__ g, const int* __restrict__ neighbours,

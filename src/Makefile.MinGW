@@ -1,3 +1,8 @@
+#CPU_BITS = 32
+CPU_BITS = 64
+
+ifeq ($(CPU_BITS),64)
+
 # SSE2, 64-bit
 #ARCH += -march=core2 -mtune=core2 -m64
 # AVX, 64-bit
@@ -6,6 +11,8 @@
 #ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m64
 # AVX2+FMA, 64-bit
 #ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -mavx2 -m64
+
+else
 
 # 32-bit, no SIMD
 #ARCH += -m32 -mno-sse
@@ -16,13 +23,17 @@
 # AVX+FMA, 32-bit
 #ARCH += -march=core2 -mtune=generic -msse4.2 -mpopcnt -maes -mpclmul -mavx -mfma -m32
 
+endif
+
+ifeq ($(CPU_BITS),64)
 CC = x86_64-w64-mingw32-gcc
 CXX = x86_64-w64-mingw32-g++
+else
+CC = i686-w64-mingw32-gcc
+CXX = i686-w64-mingw32-g++
+endif
 
-#CC = i686-w64-mingw32-gcc
-#CXX = i686-w64-mingw32-g++
-
-BOINC_DIR = ../../boinc64/
+BOINC_DIR = ../../boinc$(CPU_BITS)/
 BOINC_API_DIR = $(BOINC_DIR)/include/boinc
 BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_ZIP_DIR = $(BOINC_DIR)/zip
@@ -33,16 +44,20 @@ BOINC_LIBS = $(BOINC_LIB_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
 #BOINC_ZIP_DIR = $(BOINC_DIR)/zip
 #BOINC_LIBS = $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
 
+BZ2_DIR = ../../bz2_$(CPU_BITS)/
+
 
 ifdef BOINC_STUB
 BOINC_DIR = ../boinc_stub
 BOINC_LIBS = 
+BOINC_API_DIR = $(BOINC_DIR)/api
 endif
 
 FREETYPE_DIR = /usr/include/freetype2
-CFLAGS = -c -O3 $(ARCH) -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd -MMD -MP
+CFLAGS = -c -O3 $(ARCH) -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd -I$(BZ2_DIR) -MMD -MP
 CXXFLAGS = $(CFLAGS) -std=c++11
 LDFLAGS = $(ARCH) -L/usr/X11R6/lib -L.
+LIBS = -static-libgcc -static-libstdc++ -static -pthread $(BZ2_DIR)/libbz2.a
 CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
 CSOURCES = erf.c
 OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o)
@@ -51,7 +66,7 @@ EXECUTABLE = ../bin/pc.exe
 all: $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@ -static-libgcc -static-libstdc++ -static -pthread $(BOINC_LIBS)
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@ $(LIBS) $(BOINC_LIBS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -o $@
