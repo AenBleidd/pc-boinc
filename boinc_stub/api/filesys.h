@@ -23,13 +23,16 @@
 
 #include <string.h>
 #include <string>
+#include <unistd.h>
 
 /*#ifdef __cplusplus
 extern "C" {
 #endif*/
 
 extern int boinc_resolve_filename_s(const char*, std::string&);
+extern int boinc_resolve_filename(const char*, char*, int len);
 extern FILE* boinc_fopen(const char* path, const char* mode);
+extern int boinc_delete_file(const char*);
 
 
 inline int boinc_resolve_filename_s(const char* path, std::string& resolved)
@@ -38,9 +41,20 @@ inline int boinc_resolve_filename_s(const char* path, std::string& resolved)
 	return false;
 }
 
+inline int boinc_resolve_filename(const char* path, char* resolved, int len)
+{
+	strncpy(resolved, path, len);
+	return 0;
+}
+
 inline FILE* boinc_fopen(const char* path, const char* mode)
 {
 	return fopen(path, mode);
+}
+
+inline int boinc_delete_file(const char* path)
+{
+	return unlink(path);
 }
 
 

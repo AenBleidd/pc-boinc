@@ -26,6 +26,7 @@
 #include "filesys.h"
 #include "BoincFile.hpp"
 #include <bzlib.h>
+#include <limits.h>
 
 #define BUFLEN 32768L
 #define DEBUG 0
