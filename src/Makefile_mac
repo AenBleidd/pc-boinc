@@ -11,10 +11,10 @@ endif
 
 BOINC_BUILD_DIR = $(BOINC_DIR)/mac_build/build/Deployment
 FREETYPE_DIR = /usr/include/freetype2
-CFLAGS = -c -O3 $(ARCH) -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd -MMD -MP
-CXXFLAGS = $(CFLAGS) -stdlib=libc++ -std=c++11
-LDFLAGS = $(ARCH) -L/usr/X11R6/lib -L.
-LIBS = -static-libgcc -static-libstdc++ -pthread -Wl,-Bstatic -lbz2
+CFLAGS = -c -O3 -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd -MMD -MP
+CXXFLAGS = $(CFLAGS) -std=c++11
+LDFLAGS = $(VARIANTFLAGS) -L$(BOINC_BUILD_DIR) -L/usr/X11R6/lib -L.
+LIBS = -Wl -lbz2
 CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
 CSOURCES = erf.c
 OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o)
