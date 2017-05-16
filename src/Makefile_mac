@@ -15,7 +15,7 @@ CFLAGS = -c -O3 -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS) -I$(BOINC_DIR) -
 CXXFLAGS = $(CFLAGS) -std=c++11
 LDFLAGS = $(VARIANTFLAGS) -L$(BOINC_BUILD_DIR) -L/usr/X11R6/lib -L.
 LIBS = -Wl -lbz2
-CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp
+CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp main.cpp
 CSOURCES = erf.c
 OBJECTS = $(CXXSOURCES:.cpp=.o) $(CSOURCES:.c=.o)
 EXECUTABLE = ../bin/pc
