@@ -69,13 +69,13 @@ public:
 
 using namespace std;
 
-static const DoubleVector vd_1_0(1.0);
+constexpr DoubleVector vd_1_0(1.0);
 
 #ifdef HAS_DOUBLE_VECTOR_2
-static const DoubleVector2 vd2_1_0(1.0);
+constexpr DoubleVector2 vd2_1_0(1.0);
 #endif
 #ifdef HAS_DOUBLE_VECTOR_4
-static const DoubleVector4 vd4_1_0(1.0);
+constexpr DoubleVector4 vd4_1_0(1.0);
 #endif
 
 __attribute__((hot, always_inline)) static inline

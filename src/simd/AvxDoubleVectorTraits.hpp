@@ -57,9 +57,10 @@ struct AvxDoubleVectorTraits : public VectorTypeTraitsBase<AvxDoubleVectorTraits
 	}
 	
 	// create a vector with all elements equal to A
-	static VectorType set1(const ElementType A)
+	static constexpr VectorType set1(const ElementType A)
 	{
-		return _mm256_set1_pd(A);
+		//return _mm256_set1_pd(A);
+		return VectorType{ A, A, A, A };
 	}
 	
 	// create a vector with given elements

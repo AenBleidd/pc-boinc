@@ -58,9 +58,10 @@ struct SseDoubleVectorTraits : public VectorTypeTraitsBase<SseDoubleVectorTraits
 	}
 	
 	// create a vector with all elements equal to A
-	static VectorType set1(const ElementType A)
+	static constexpr VectorType set1(const ElementType A)
 	{
-		return _mm_set1_pd(A);
+		//return _mm_set1_pd(A);
+		return VectorType{ A, A };
 	}
 	
 	// create a vector with given elements
