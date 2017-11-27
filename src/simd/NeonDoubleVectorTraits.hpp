@@ -59,9 +59,10 @@ struct NeonDoubleVectorTraits : public VectorTypeTraitsBase<NeonDoubleVectorTrai
 	}
 	
 	// create a vector with all elements equal to A
-	static VectorType set1(const ElementType A)
+	static constexpr VectorType set1(const ElementType A)
 	{
-		return vdupq_n_f64(A);
+		//return vdupq_n_f64(A);
+		return VectorType{ A, A };
 	}
 	
 	// create a vector with given elements

@@ -59,7 +59,7 @@ struct ScalarTypeTraits : public VectorTypeTraitsBase<ScalarTypeTraits<T> >
 	}
 	
 	// create a vector with all elements equal to A
-	static VectorType set1(const ElementType A)
+	static constexpr VectorType set1(const ElementType A)
 	{
 		return A;
 	}

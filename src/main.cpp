@@ -78,10 +78,12 @@ bool checkRequiredInstructionSets() {
 
 #ifdef __AVX2__
 	//printf("Checking for AVX2 support\n");
-	if (!__get_cpuid(7, &a, &b, &c, &d)) {
+	if (__get_cpuid_max(0, 0) < 7) {
 		fprintf(stderr, "Extended CPUID 0x7 instruction is not supported by your CPU!\n");
 		return false;
 	}
+
+	__cpuid_count(7, 0, a, b, c, d);
 
 	if (0 == (b & bit_AVX2)) {
 		fprintf(stderr, "AVX2 instructions are not supported by your CPU!\n");

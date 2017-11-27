@@ -55,7 +55,7 @@ public:
 		: value(VectorTypeTraits::setzero())
 	{}
 	
-	explicit Vector(const ElementType& val)
+	explicit constexpr Vector(const ElementType& val)
 		: value(VectorTypeTraits::set1(val))
 	{}
 	
