@@ -12,6 +12,7 @@
 	* openssl-1.0.1e: www.openssl.org (for Mac)
 	* libtool
 	* libnotify-dev
+	* libbz2-dev: https://sourceforge.net/projects/bzip2/
 	* g++-multilib (to build 32 bit on a 64 bit machine)
 * Assuming you now have this repository inside `BOINC_dev/boinc/samples/pc-boinc/`, you can compile it using the provided scritps inside the `src` folder
 * A test is available, you just need to run it using the `test_run.sh` script
