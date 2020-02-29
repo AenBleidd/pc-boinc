@@ -6,7 +6,7 @@
 * First of all, I suggest you to create a directory, for example `BOINC_dev`
 * Then, you need to download the boinc repository: `git clone https://github.com/BOINC/boinc boinc`
 * After having downloaded the boinc repository (assume to have it in `BOINC_dev/boinc/` folder, you need to clone this repository in the folder `BOINC_dev/boinc/samples/`
-* Before compiling the PC++ (BOINC version), you may need the following repository to compile the BOINC lybraries
+* Before compiling the PC++ (BOINC version), you may need the following repository to compile the BOINC libraries
 	* c-ares-1.9.1: http://c-ares.haxx.se/ (for Mac)
 	* curl-7.26.0: http://curl.haxx.se/ (for Mac)
 	* openssl-1.0.1e: www.openssl.org (for Mac)
