@@ -47,7 +47,7 @@ int readCheckpoint(const string outputFile, long long unsigned int& score) {
 
 			checkFile.close();
 
-			cerr << "Start from checkpoint: " << atoi(s1.c_str()) + 1 << endl;
+			cerr << "[I] readCheckpoint: Start from checkpoint: " << atoi(s1.c_str()) + 1 << endl;
 
 			//save score
 			score = atoi(s2.c_str());
@@ -55,6 +55,8 @@ int readCheckpoint(const string outputFile, long long unsigned int& score) {
 			//start from next iteration
 			return (atoi(s1.c_str()) + 1);
 		}
+
+		cerr << "[E] readCheckpoint: failed to open checkpoint at '" << CHECKPOINT << "'" << endl;
 
 		bool file_present = false;
 
@@ -70,7 +72,7 @@ int readCheckpoint(const string outputFile, long long unsigned int& score) {
 				out.close();
 			}
 
-			cerr << "[W] Cannot open checkpoint's file, results file cleaned!" << endl;
+			cerr << "[W] readCheckpoint: Cannot open checkpoint's file, results file cleaned!" << endl;
 		}
 		
 		return 0;
@@ -101,7 +103,7 @@ bool writeCheckpoint(int l, long long unsigned int score) {
 
 				return true;
 			} else {
-				cerr << "[W] Cannot write checkpoint's file" << endl;
+				cerr << "[W] writeCheckpoint: Cannot write checkpoint's file at '" << CHECKPOINT << "'" << endl;
 
 				return false;
 			}
