@@ -130,12 +130,12 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	char* strOUT;
 
 	if((p = strrchr(strOut, '.')) == NULL) {
-		delete strOut;
+		free strOut;
 		return (char*) strGZ;   // no dots (ignored)
 	}
 
 	if(strcmp(p, ".bz2") != 0) {
-		delete strOut;
+		free(strOut);
 		return (char*) strGZ;   // not .gz (ignored)
 	}
 
@@ -149,16 +149,16 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 
 		if (fail) {
 			cerr << "[E] BoincFile do_gunbzip: Cannot resolve \"" << strGZ << "\"" << endl;
-			delete strIN;
-			delete strOut;
+			free(strIN);
+			free(strOut);
 			return NULL;
 		}
 	}
 
 	if(!(fIn = fopen(strIN, "rb"))) {
 		cerr << "[E] BoincFile gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strIN << "]" << endl;
-		delete strIN;
-		delete strOut;
+		free(strIN);
+		free(strOut);
 		return NULL; // error
 	}
 
@@ -170,10 +170,10 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 #ifdef DEBUG
 		cout << "gunbzip: bad header (ignored)" << endl;
 #endif
-		delete strOut;
+		free(strOut);
 		return (char*) strIN;  // not gzipped (ignored)
 	}
-	delete strIN;
+	free(strIN);
 	strIN = (char *) NULL;
 
 	fseek(fIn, 0, SEEK_SET);
@@ -181,7 +181,7 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 
 	if (bzError != BZ_OK) {
 		cerr << "gunbzip: BZ2_bzReadOpen: " << bzError << endl;
-		delete strOut;
+		free(strOut);
 		return NULL;
 	}
 
@@ -193,8 +193,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 
 		if (fail) {
 			cerr << "[E] Cannot resolve \"" << strOUT << "\"" << endl;
-			delete strOut;
-			delete strOUT;
+			free(strOut);
+			free(strOUT);
 			return NULL;
 		}
 	}
@@ -202,8 +202,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	FILE* fOut = boinc_fopen(strOUT, "wb");
 	if (!fOut) {
 		cerr << "gunbzip: fopen (w) error (" << strerror(errno) << ")" << endl;
-		delete strOut;
-		delete strOUT;
+		free(strOut);
+		free(strOUT);
 		return NULL; // error
 	}
 
@@ -217,8 +217,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 #endif
 			if (lWrite != lRead) {
 				cerr << "gunbzip: short write" << endl;
-				delete strOut;
-				delete strOUT;
+				free(strOut);
+				free(strOUT);
 				return NULL;
 			}
 		}
@@ -237,7 +237,7 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 		boinc_delete_file(strGZ);
 	}
 	
-	delete strOut;
+	free(strOut);
 
 	return strOUT; // needs to be freed in calling function
 }
