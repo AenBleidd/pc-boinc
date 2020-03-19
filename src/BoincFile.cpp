@@ -130,29 +130,35 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	char* strOUT;
 
 	if((p = strrchr(strOut, '.')) == NULL) {
+		free strOut;
 		return (char*) strGZ;   // no dots (ignored)
 	}
 
 	if(strcmp(p, ".bz2") != 0) {
+		free(strOut);
 		return (char*) strGZ;   // not .gz (ignored)
 	}
 
 	*p = '\0';
 
 	if (boinc_is_standalone()) {
-		strIN = (char*) strGZ;
+		strIN = strdup((char*) strGZ); // copied so memory can always be freed
 	} else {
-		strIN = (char*) malloc(PATH_MAX);
+		strIN = (char*) malloc(PATH_MAX); // which is required for the malloc
 		bool fail = boinc_resolve_filename(strGZ, strIN, PATH_MAX);
 
 		if (fail) {
-			cerr << "[E] Cannot resolve \"" << strGZ << "\"" << endl;
+			cerr << "[E] BoincFile do_gunbzip: Cannot resolve \"" << strGZ << "\"" << endl;
+			free(strIN);
+			free(strOut);
 			return NULL;
 		}
 	}
 
 	if(!(fIn = fopen(strIN, "rb"))) {
-		cerr << "gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strIN << "]" << endl;
+		cerr << "[E] BoincFile gunbzip: fopen (r) error (" << strerror(errno) << ") [" << strIN << "]" << endl;
+		free(strIN);
+		free(strOut);
 		return NULL; // error
 	}
 
@@ -164,25 +170,31 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 #ifdef DEBUG
 		cout << "gunbzip: bad header (ignored)" << endl;
 #endif
+		free(strOut);
 		return (char*) strIN;  // not gzipped (ignored)
 	}
+	free(strIN);
+	strIN = (char *) NULL;
 
 	fseek(fIn, 0, SEEK_SET);
 	BZFILE* bzf = BZ2_bzReadOpen(&bzError, fIn, 0, 0, NULL, 0);
 
 	if (bzError != BZ_OK) {
 		cerr << "gunbzip: BZ2_bzReadOpen: " << bzError << endl;
+		free(strOut);
 		return NULL;
 	}
 
 	if (boinc_is_standalone()) {
-		strOUT = strOut;
+		strOUT = strdup(strOut); // to ensure it can always be freed
 	} else {
-		strOUT = (char*) malloc(PATH_MAX);
+		strOUT = (char*) malloc(PATH_MAX); // which requires to be freed
 		bool fail = boinc_resolve_filename(strOut, strOUT, PATH_MAX);
 
 		if (fail) {
 			cerr << "[E] Cannot resolve \"" << strOUT << "\"" << endl;
+			free(strOut);
+			free(strOUT);
 			return NULL;
 		}
 	}
@@ -190,6 +202,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	FILE* fOut = boinc_fopen(strOUT, "wb");
 	if (!fOut) {
 		cerr << "gunbzip: fopen (w) error (" << strerror(errno) << ")" << endl;
+		free(strOut);
+		free(strOUT);
 		return NULL; // error
 	}
 
@@ -203,6 +217,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 #endif
 			if (lWrite != lRead) {
 				cerr << "gunbzip: short write" << endl;
+				free(strOut);
+				free(strOUT);
 				return NULL;
 			}
 		}
@@ -220,6 +236,8 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	if (!bKeep) {
 		boinc_delete_file(strGZ);
 	}
+	
+	free(strOut);
 
-	return strOUT;
+	return strOUT; // needs to be freed in calling function
 }
