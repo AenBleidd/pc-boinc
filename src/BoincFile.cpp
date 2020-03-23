@@ -130,7 +130,7 @@ char* do_gunbzip(const char* strGZ, bool bKeep) {
 	char* strOUT;
 
 	if((p = strrchr(strOut, '.')) == NULL) {
-		free strOut;
+		free(strOut);
 		return (char*) strGZ;   // no dots (ignored)
 	}
 
