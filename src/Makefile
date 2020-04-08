@@ -34,7 +34,7 @@ FREETYPE_DIR = /usr/include/freetype2
 CPPFLAGS += -I$(BOINC_DIR) -I$(BOINC_LIB_DIR) -I$(BOINC_API_DIR) -I$(BOINC_ZIP_DIR) -I$(FREETYPE_DIR) -Isimd
 CFLAGS += -c -O3 $(ARCH) -Wall -Wextra -pedantic -Werror $(VARIANTFLAGS)  -MMD -MP
 CXXFLAGS += $(CFLAGS) -std=gnu++11
-LDFLAGS += $(ARCH) -L/usr/X11R6/lib -L.
+LDFLAGS += $(ARCH) -L/usr/X11R6/lib -L. -static
 LIBS ?= -static-libgcc -static-libstdc++ -pthread -Wl,-Bstatic -lbz2
 CXXSOURCES = BoincFile.cpp Graph.cpp boinc_functions.cpp utility.cpp pc.cpp main.cpp
 CSOURCES = erf.c
